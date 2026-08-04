@@ -15,15 +15,16 @@ const IMAGE_SAMPLE = {
 const COLS = 140;
 const ROWS = 96;
 const CELL = 0.145;
-const KEY_DEPTH = 0.16;
-const KEY_TRAVEL = 0.85;
-const SPRING = 0.16;          // soft ease — less stiff
-const DAMPING = 0.86;
+const KEY_GAP = 0.86;         // footprint vs cell — gaps read as key edges
+const KEY_DEPTH = 0.28;       // taller caps so sides catch light
+const KEY_TRAVEL = 0.72;
+const SPRING = 0.18;
+const DAMPING = 0.84;
 const PRESS_RADIUS = 1.15;
 const WAVE_CHAPTER = 2;
-const WAVE_HALF = 14;         // wide smooth band
-const WAVE_LERP = 0.1;        // how fast the ripple follows the scroll
-const IMAGE_BLEND = 0.22;     // snappy wall color crossfade between pages
+const WAVE_HALF = 14;
+const WAVE_LERP = 0.1;
+const IMAGE_BLEND = 0.22;
 
 const canvasEl = document.getElementById("pixel-stage");
 const paintHint = document.getElementById("paint-hint");
@@ -61,40 +62,60 @@ function ensureAudio() {
   return audioCtx;
 }
 
-/** Soft muted key tick — quieter, lower, less harsh */
+/** Dense mechanical key tick — short noise + soft body tone */
 function playKeyClick(intensity = 1) {
   if (!soundEnabled) return;
   const ctx = ensureAudio();
   if (!ctx) return;
 
   const t0 = ctx.currentTime;
-  const dur = 0.05 + Math.random() * 0.02;
+  const vol = 0.07 * Math.min(1.2, intensity);
+
+  // Click transient (noise burst)
+  const dur = 0.028 + Math.random() * 0.018;
   const frames = Math.floor(ctx.sampleRate * dur);
   const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < frames; i++) {
-    const env = Math.pow(1 - i / frames, 1.8);
+    const env = Math.pow(1 - i / frames, 2.4);
     data[i] = (Math.random() * 2 - 1) * env;
   }
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 1400 + Math.random() * 1600;
+  bp.Q.value = 0.9;
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.setValueAtTime(vol, t0);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  noise.connect(bp);
+  bp.connect(noiseGain);
+  noiseGain.connect(ctx.destination);
+  noise.start(t0);
+  noise.stop(t0 + dur);
 
-  const src = ctx.createBufferSource();
-  src.buffer = buffer;
+  // Soft keyed body (triangle thump)
+  const osc = ctx.createOscillator();
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(180 + Math.random() * 90, t0);
+  osc.frequency.exponentialRampToValueAtTime(70, t0 + 0.05);
+  const oscGain = ctx.createGain();
+  oscGain.gain.setValueAtTime(vol * 0.35, t0);
+  oscGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.055);
+  osc.connect(oscGain);
+  oscGain.connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + 0.06);
+}
 
-  const filter = ctx.createBiquadFilter();
-  filter.type = "bandpass";
-  filter.frequency.value = 900 + Math.random() * 500;
-  filter.Q.value = 0.55;
-
-  const gain = ctx.createGain();
-  const vol = 0.045 * Math.min(1, intensity);
-  gain.gain.setValueAtTime(vol, t0);
-  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-
-  src.connect(filter);
-  filter.connect(gain);
-  gain.connect(ctx.destination);
-  src.start(t0);
-  src.stop(t0 + dur);
+/** Fire a tight cluster of ticks — denser feel while scrolling/hovering */
+function playKeyCluster(count = 3, intensity = 0.7) {
+  if (!soundEnabled) return;
+  for (let i = 0; i < count; i++) {
+    const delay = i * (8 + Math.random() * 10);
+    window.setTimeout(() => playKeyClick(intensity * (0.7 + Math.random() * 0.4)), delay);
+  }
 }
 
 function cellIndexFromFocus() {
@@ -108,16 +129,19 @@ function tickIfNewCell() {
   const idx = cellIndexFromFocus();
   if (idx < 0 || idx === lastClickCell) return;
   lastClickCell = idx;
-  playKeyClick();
+  playKeyClick(0.95);
+  // Neighbor taps for denser keyboard chatter
+  if (Math.random() < 0.55) playKeyClick(0.35 + Math.random() * 0.25);
+  if (Math.random() < 0.25) playKeyClick(0.2 + Math.random() * 0.2);
 }
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#0a1628");
+scene.background = new THREE.Color("#060b14");
 
 const gridWidth = COLS * CELL;
 const gridHeight = ROWS * CELL;
 
-const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
 camera.position.set(0, -3.2, 16);
 camera.lookAt(0, 0.4, 0);
 
@@ -128,17 +152,39 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference: "high-performance"
 });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setClearColor(0x0a1628, 1);
+renderer.setClearColor(0x060b14, 1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const group = new THREE.Group();
 scene.add(group);
 
-// Full-cell cubes — no gaps, no photo peeking through
-const geometry = new THREE.BoxGeometry(CELL * 1.02, CELL * 1.02, KEY_DEPTH);
-const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+// Soft keycap lighting — tops bright, sides fall off like real keys
+const ambient = new THREE.AmbientLight(0x9eb6d4, 0.55);
+scene.add(ambient);
+const keyLight = new THREE.DirectionalLight(0xfff2d8, 1.15);
+keyLight.position.set(-4, 8, 14);
+scene.add(keyLight);
+const fillLight = new THREE.DirectionalLight(0x6a8cff, 0.35);
+fillLight.position.set(6, -2, 8);
+scene.add(fillLight);
+const rimLight = new THREE.DirectionalLight(0xffc978, 0.25);
+rimLight.position.set(0, -10, 4);
+scene.add(rimLight);
+
+// Beveled-ish keycaps: slightly inset top face via shallow box + gaps between keys
+const keySize = CELL * KEY_GAP;
+const geometry = new THREE.BoxGeometry(keySize, keySize, KEY_DEPTH, 1, 1, 1);
+const material = new THREE.MeshStandardMaterial({
+  color: 0xffffff,
+  roughness: 0.48,
+  metalness: 0.06,
+  flatShading: true
+});
 
 const count = COLS * ROWS;
 const mesh = new THREE.InstancedMesh(geometry, material, count);
+mesh.castShadow = false;
+mesh.receiveShadow = false;
 group.add(mesh);
 
 const cells = [];
@@ -266,10 +312,10 @@ function fitCamera() {
   const w = window.innerWidth;
   const h = window.innerHeight;
   camera.aspect = w / Math.max(h, 1);
-  // More face-on so keys clearly pop toward you (not a wavy hillside)
+  // Slight rake so key sides / edges read in 3D
   const fit = Math.max(gridWidth / camera.aspect, gridHeight) * 0.78;
-  camera.position.set(0, -fit * 0.08, fit * 1.35);
-  camera.lookAt(0, 0, 0);
+  camera.position.set(0, -fit * 0.28, fit * 1.32);
+  camera.lookAt(0, 0.05, KEY_DEPTH * 0.15);
   camera.updateProjectionMatrix();
 }
 
@@ -402,10 +448,11 @@ function handleScroll(deltaY) {
 
     scrollSoundDebt += Math.abs(deltaY);
     const now = performance.now();
-    if (scrollSoundDebt > 28 && now - lastScrollSound > 70) {
+    if (scrollSoundDebt > 8 && now - lastScrollSound > 22) {
+      const burst = Math.min(5, 2 + Math.floor(Math.abs(deltaY) / 25));
       scrollSoundDebt = 0;
       lastScrollSound = now;
-      playKeyClick(0.55 + Math.min(0.45, Math.abs(deltaY) / 80));
+      playKeyCluster(burst, 0.55 + Math.min(0.55, Math.abs(deltaY) / 70));
     }
     return;
   }
@@ -542,7 +589,11 @@ function animate() {
     }
 
     dummy.position.set(cell.x, cell.y, KEY_DEPTH * 0.5 + cell.z);
-    dummy.scale.set(1, 1, 1);
+    // Slight squash when pressed — reads like a real keycap
+    const press = Math.min(1, Math.max(0, cell.z / Math.max(KEY_TRAVEL, 0.001)));
+    const sxy = 1 - press * 0.04;
+    const sz = 1 - press * 0.12;
+    dummy.scale.set(sxy, sxy, sz);
     dummy.updateMatrix();
     mesh.setMatrixAt(cell.i, dummy.matrix);
 
