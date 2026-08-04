@@ -75,9 +75,18 @@
             type="button"
             class="chapter-dot is-unlocked"
             data-goto="5"
-            aria-label="Connect"
+            aria-label="Moodboard"
           >
             <span class="chapter-num">05</span>
+            <span class="chapter-name">Moodboard</span>
+          </button>
+          <button
+            type="button"
+            class="chapter-dot is-unlocked"
+            data-goto="6"
+            aria-label="Connect"
+          >
+            <span class="chapter-num">06</span>
             <span class="chapter-name">Connect</span>
           </button>
         </nav>
@@ -280,11 +289,88 @@
           class="page"
           id="page-5"
           data-chapter="5"
+          aria-label="Moodboard"
+          hidden
+        >
+          <div class="plaque plaque--mood">
+            <p class="plaque-num">05 moodboard</p>
+            <h2 class="display display--sm">How the pixels started</h2>
+            <p class="plaque-lede">
+              "What if every pixel was actually something you could touch?"
+            </p>
+            <ol class="mood-trail" aria-label="Pixel origin story">
+              <li class="mood-step">
+                <figure class="mood-frame mood-frame--cream">
+                  <img
+                    src="./assets/mood-spark.png"
+                    alt="Pixel sun wallpaper"
+                    loading="lazy"
+                  />
+                </figure>
+                <p class="mood-step-label">01 · Spark</p>
+                <p class="mood-step-note">
+                  Saw this on Pinterest. A sun made only of colored squares.
+                  That itch stayed.
+                </p>
+              </li>
+              <li class="mood-arrow" aria-hidden="true">→</li>
+              <li class="mood-step">
+                <figure class="mood-frame mood-frame--cream">
+                  <img
+                    src="./assets/mood-first-toy.png"
+                    alt="First interactive pixel grid"
+                    loading="lazy"
+                  />
+                </figure>
+                <p class="mood-step-label">02 · First poke</p>
+                <p class="mood-step-note">
+                  Asked Claude how to start. Any idea. Got half cooked HTML.
+                  Free tier huh.
+                </p>
+              </li>
+              <li class="mood-arrow" aria-hidden="true">→</li>
+              <li class="mood-step">
+                <figure class="mood-frame mood-frame--cream">
+                  <img
+                    src="./assets/mood-push.png"
+                    alt="Pushable black pixel sticks"
+                    loading="lazy"
+                  />
+                </figure>
+                <p class="mood-step-label">03 · Push toys</p>
+                <p class="mood-step-note">
+                  After vibe coding. Like pin art. Push a stick and depth shows.
+                  Move around and a figure forms.
+                </p>
+              </li>
+              <li class="mood-arrow" aria-hidden="true">→</li>
+              <li class="mood-step">
+                <figure class="mood-frame">
+                  <img
+                    src="./assets/mood-first-wall.png"
+                    alt="First keyed wall experiment"
+                    loading="lazy"
+                  />
+                </figure>
+                <p class="mood-step-label">04 · Color the keys</p>
+                <p class="mood-step-note">
+                  Each key gets a color from the painting. That wall became the
+                  very first page.
+                </p>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section
+          class="page"
+          id="page-6"
+          data-chapter="6"
           aria-label="Connect"
           hidden
         >
           <div class="plaque plaque--connect">
-            <p class="plaque-num">05 connect</p>
+            <p class="plaque-num">06 connect</p>
             <h2 class="display display--sm">Have a weird idea?</h2>
             <p class="plaque-lede">Perfect. Those are my favorite kind.</p>
             <a class="connect-cta" href="mailto:r.rababzahra888@gmail.com"

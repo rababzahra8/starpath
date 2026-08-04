@@ -436,6 +436,141 @@ body {
   }
 }
 
+.plaque--mood {
+  max-width: min(980px, 94vw);
+  text-align: center;
+}
+
+.plaque--mood .plaque-lede {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 46ch;
+}
+
+.mood-trail {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+  text-align: left;
+}
+
+.mood-step {
+  flex: 0 0 auto;
+  width: min(168px, 22vw);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mood-arrow {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  margin-top: 52px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1;
+  color: rgba(255, 229, 102, 0.75);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.mood-frame {
+  margin: 0;
+  width: 100%;
+  height: 150px;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 229, 140, 0.22);
+  background: rgba(7, 13, 26, 0.35);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+.mood-frame--cream {
+  background: #f3ead7;
+  border-color: rgba(243, 234, 215, 0.55);
+}
+
+.mood-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  transition: transform 0.5s var(--ease);
+}
+
+.mood-frame:hover img {
+  transform: scale(1.02);
+}
+
+/* Two half-height frames stacked = one mood-frame tall */
+.mood-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  height: 150px;
+}
+
+.mood-stack .mood-frame {
+  flex: 1 1 0;
+  height: auto;
+}
+
+.mood-step-label {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffe566;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
+}
+
+.mood-step-note {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(0.8rem, 1.2vw, 0.92rem);
+  font-weight: 500;
+  line-height: 1.35;
+  color: #fff8e8;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 4px 16px rgba(0, 0, 0, 0.7);
+}
+
+@media (max-width: 900px) {
+  .mood-trail {
+    flex-wrap: wrap;
+    gap: 16px 18px;
+  }
+
+  .mood-arrow {
+    display: none;
+  }
+
+  .mood-step {
+    width: calc(50% - 12px);
+  }
+}
+
+@media (max-width: 520px) {
+  .mood-step {
+    width: 100%;
+  }
+
+  .mood-frame,
+  .mood-stack {
+    height: 200px;
+  }
+}
+
 .interest-run {
   list-style: none;
   margin: 22px 0 0;

@@ -8,20 +8,22 @@ import {
   reduceMotion
 } from "./motion.js";
 
-const CHAPTER_COUNT = 5;
+const CHAPTER_COUNT = 6;
 const IMAGE_BY_CHAPTER = {
   1: "./assets/starry.jpg",
   2: "./assets/about-cat.jpg",
   3: "./assets/field-cosmos.jpg",
   4: "./assets/sunflower-night.jpg",
-  5: "./assets/projects-fire.jpg"
+  5: "./assets/mood-spark.png",
+  6: "./assets/projects-fire.jpg"
 };
 const IMAGE_SAMPLE = {
   1: { mode: "stretch" },
   2: { mode: "stretch" },
   3: { mode: "stretch" },
   4: { mode: "stretch" },
-  5: { mode: "stretch" }
+  5: { mode: "stretch" },
+  6: { mode: "stretch" }
 };
 const COLS = 140;
 const ROWS = 96;
@@ -73,8 +75,9 @@ const HINTS = {
   1: "Scroll — paint into Playground",
   2: "Keep scrolling — Experiments",
   3: "Keep scrolling — Garden",
-  4: "Keep scrolling — Connect",
-  5: "End of the path · scroll up to wipe back"
+  4: "Keep scrolling — Moodboard",
+  5: "Keep scrolling — Connect",
+  6: "End of the path · scroll up to wipe back"
 };
 
 function ensureAudio() {
