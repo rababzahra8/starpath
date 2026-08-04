@@ -1,17 +1,29 @@
 import * as THREE from "three";
 
-const IMAGE_SRC = "./assets/starry.jpg";
-const COLS = 96;
-const ROWS = 66;
-const CELL = 0.2;
-const KEY_DEPTH = 0.18;
-const KEY_TRAVEL = 0.95;
+const IMAGE_BY_CHAPTER = {
+  1: "./assets/starry.jpg",
+  2: "./assets/sunflower-night.jpg", // Work — scroll wave
+  3: "./assets/solar-flare.jpg"      // Contact
+};
+// How each page maps its image onto the landscape wall.
+// cover = crop to fill · half-spread = use half the portrait height, stretch full-width horizontally
+const IMAGE_SAMPLE = {
+  1: { mode: "cover", focus: { x: 0.5, y: 0.45 } },
+  2: { mode: "cover", focus: { x: 0.5, y: 0.5 } },
+  3: { mode: "cover", focus: { x: 0.5, y: 0.5 } }
+};
+const COLS = 140;
+const ROWS = 96;
+const CELL = 0.145;
+const KEY_DEPTH = 0.16;
+const KEY_TRAVEL = 0.85;
 const SPRING = 0.16;          // soft ease — less stiff
 const DAMPING = 0.86;
-const PRESS_RADIUS = 1.05;
+const PRESS_RADIUS = 1.15;
 const WAVE_CHAPTER = 2;
-const WAVE_HALF = 10;         // wide smooth band
+const WAVE_HALF = 14;         // wide smooth band
 const WAVE_LERP = 0.1;        // how fast the ripple follows the scroll
+const IMAGE_BLEND = 0.22;     // snappy wall color crossfade between pages
 
 const canvasEl = document.getElementById("pixel-stage");
 const paintHint = document.getElementById("paint-hint");
@@ -140,46 +152,86 @@ const hitPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 const hitPoint = new THREE.Vector3();
 
 function vivid(r, g, b) {
-  // Light lift only — keep the painting readable
-  let rr = Math.min(1, r / 255 * 1.08 + 0.04);
-  let gg = Math.min(1, g / 255 * 1.06 + 0.03);
-  let bb = Math.min(1, b / 255 * 1.12 + 0.06);
-  return new THREE.Color(rr, gg, bb);
+  // Stronger contrast + slight saturation so brushwork stays readable on the wall
+  let rr = r / 255;
+  let gg = g / 255;
+  let bb = b / 255;
+  const contrast = 1.18;
+  rr = (rr - 0.5) * contrast + 0.5;
+  gg = (gg - 0.5) * contrast + 0.5;
+  bb = (bb - 0.5) * contrast + 0.5;
+  const avg = (rr + gg + bb) / 3;
+  const sat = 1.12;
+  rr = avg + (rr - avg) * sat;
+  gg = avg + (gg - avg) * sat;
+  bb = avg + (bb - avg) * sat;
+  return new THREE.Color(
+    Math.min(1, Math.max(0, rr)),
+    Math.min(1, Math.max(0, gg)),
+    Math.min(1, Math.max(0, bb))
+  );
 }
 
-function coverCrop(img, w, h) {
+function coverCrop(img, w, h, focus = { x: 0.5, y: 0.5 }) {
   const srcAspect = img.width / img.height;
   const dstAspect = w / h;
   let sx = 0, sy = 0, sw = img.width, sh = img.height;
   if (srcAspect > dstAspect) {
     sw = img.height * dstAspect;
-    sx = (img.width - sw) / 2;
+    sx = Math.max(0, Math.min(img.width - sw, img.width * focus.x - sw / 2));
   } else {
     sh = img.width / dstAspect;
-    sy = (img.height - sh) / 2;
+    sy = Math.max(0, Math.min(img.height - sh, img.height * focus.y - sh / 2));
   }
   return { sx, sy, sw, sh };
 }
 
-function sampleImage(img) {
+/** Half of a tall image, stretched across the landscape wall. */
+function halfSpreadCrop(img, half = "bottom", focusX = 0.5) {
+  const sh = img.height * 0.5;
+  const sy = half === "top" ? 0 : img.height - sh;
+  // Full width of the painting, laid out horizontally on the wall
+  void focusX;
+  return { sx: 0, sy, sw: img.width, sh };
+}
+
+function sampleImage(img, opts = { mode: "cover", focus: { x: 0.5, y: 0.5 } }) {
   const sample = document.createElement("canvas");
   sample.width = COLS;
   sample.height = ROWS;
   const ctx = sample.getContext("2d", { willReadFrequently: true });
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  const { sx, sy, sw, sh } = coverCrop(img, COLS, ROWS);
+
+  let crop;
+  if (opts.mode === "half-spread") {
+    crop = halfSpreadCrop(img, opts.half || "bottom", opts.focusX ?? 0.5);
+  } else if (opts.mode === "stretch") {
+    crop = { sx: 0, sy: 0, sw: img.width, sh: img.height };
+  } else {
+    crop = coverCrop(img, COLS, ROWS, opts.focus || { x: 0.5, y: 0.5 });
+  }
+
+  const { sx, sy, sw, sh } = crop;
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, COLS, ROWS);
   return ctx.getImageData(0, 0, COLS, ROWS).data;
 }
 
-function buildCells(pixels) {
+function colorFromPixels(pixels, i) {
+  const p = i * 4;
+  return vivid(pixels[p], pixels[p + 1], pixels[p + 2]);
+}
+
+function buildCells(pixelsByChapter) {
   cells.length = 0;
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const i = r * COLS + c;
-      const p = i * 4;
-      const fullColor = vivid(pixels[p], pixels[p + 1], pixels[p + 2]);
+      const chapterColors = {
+        1: colorFromPixels(pixelsByChapter[1], i),
+        2: colorFromPixels(pixelsByChapter[2], i),
+        3: colorFromPixels(pixelsByChapter[3], i)
+      };
       const x = (c - COLS / 2 + 0.5) * CELL;
       const y = (ROWS / 2 - r - 0.5) * CELL;
       const ny = r / ROWS;
@@ -189,7 +241,8 @@ function buildCells(pixels) {
 
       cells.push({
         i, r, c, x, y, region,
-        fullColor,
+        chapterColors,
+        fullColor: chapterColors[1].clone(),
         visited: 0,
         // spring state: z=0 flush in wall, positive z = toward camera
         z: 0,
@@ -202,7 +255,7 @@ function buildCells(pixels) {
       dummy.scale.set(1, 1, 1);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
-      mesh.setColorAt(i, fullColor);
+      mesh.setColorAt(i, chapterColors[1]);
     }
   }
   mesh.instanceMatrix.needsUpdate = true;
@@ -265,6 +318,13 @@ function goToChapter(n) {
     return;
   }
   currentChapter = n;
+
+  // Snap wall to the new page image so the swap is obvious
+  for (const cell of cells) {
+    cell.fullColor.copy(cell.chapterColors[n]);
+    mesh.setColorAt(cell.i, cell.fullColor);
+  }
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 
   if (n !== WAVE_CHAPTER) {
     waveActive = 0;
@@ -451,6 +511,7 @@ function animate() {
   }
 
   const radiusSq = PRESS_RADIUS * PRESS_RADIUS;
+  const chapterColorKey = currentChapter;
 
   for (const cell of cells) {
     let want = cell.target;
@@ -485,9 +546,10 @@ function animate() {
     dummy.updateMatrix();
     mesh.setMatrixAt(cell.i, dummy.matrix);
 
+    cell.fullColor.lerp(cell.chapterColors[chapterColorKey], IMAGE_BLEND);
     tmpColor.copy(cell.fullColor);
     if (cell.z > 0.04) {
-      tmpColor.lerp(pressTint, Math.min(1, cell.z / KEY_TRAVEL) * 0.28);
+      tmpColor.lerp(pressTint, Math.min(1, cell.z / KEY_TRAVEL) * 0.14);
     }
     mesh.setColorAt(cell.i, tmpColor);
   }
@@ -499,12 +561,25 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+async function loadImage(src) {
+  const img = new Image();
+  img.src = src;
+  await img.decode();
+  return img;
+}
+
 async function boot() {
   bindUI();
-  const img = new Image();
-  img.src = IMAGE_SRC;
-  await img.decode();
-  buildCells(sampleImage(img));
+  const [img1, img2, img3] = await Promise.all([
+    loadImage(IMAGE_BY_CHAPTER[1]),
+    loadImage(IMAGE_BY_CHAPTER[2]),
+    loadImage(IMAGE_BY_CHAPTER[3])
+  ]);
+  buildCells({
+    1: sampleImage(img1, IMAGE_SAMPLE[1]),
+    2: sampleImage(img2, IMAGE_SAMPLE[2]),
+    3: sampleImage(img3, IMAGE_SAMPLE[3])
+  });
   resize();
   goToChapter(1);
   focus.x = 0;
