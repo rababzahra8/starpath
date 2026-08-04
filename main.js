@@ -1,30 +1,35 @@
 import * as THREE from "three";
 
+const CHAPTER_COUNT = 6;
 const IMAGE_BY_CHAPTER = {
-  1: "./assets/starry.jpg",
-  2: "./assets/sunflower-night.jpg", // Work — scroll wave
-  3: "./assets/solar-flare.jpg"      // Contact
+  1: "./assets/starry.jpg?v=16",           // Home
+  2: "./assets/about-cat.jpg?v=19",        // About
+  3: "./assets/projects-fire.jpg",    // Projects / companies
+  4: "./assets/field-cosmos.jpg?v=18",     // Field
+  5: "./assets/sunflower-night.jpg?v=17",  // Work
+  6: "./assets/solar-flare.jpg"       // Contact (kept)
 };
-// How each page maps its image onto the landscape wall.
-// cover = crop to fill · half-spread = use half the portrait height, stretch full-width horizontally
 const IMAGE_SAMPLE = {
-  1: { mode: "cover", focus: { x: 0.5, y: 0.45 } },
-  2: { mode: "cover", focus: { x: 0.5, y: 0.5 } },
-  3: { mode: "cover", focus: { x: 0.5, y: 0.5 } }
+  1: { mode: "stretch" },
+  2: { mode: "stretch" },
+  3: { mode: "stretch" },
+  4: { mode: "stretch" },
+  5: { mode: "stretch" },
+  6: { mode: "stretch" }
 };
 const COLS = 140;
 const ROWS = 96;
 const CELL = 0.145;
-const KEY_GAP = 0.84;         // footprint vs cell — gaps read as key edges
-const KEY_DEPTH = 0.26;       // taller caps so sides catch light
-const KEY_TRAVEL = 0.95;      // deeper press under the cursor
-const SPRING = 0.28;          // snappier key feel
+const KEY_GAP = 0.84;
+const KEY_DEPTH = 0.26;
+const KEY_TRAVEL = 0.95;
+const SPRING = 0.28;
 const DAMPING = 0.78;
-const PRESS_RADIUS = 2.8;     // wider cursor wake
-const WIPE_EDGE = 4.5;        // soft rows at the image frontier
-const WIPE_PRESS = 7;         // how wide the key press band is at the frontier
-const IMAGE_BLEND = 0.35;     // snappy per-row color settle
-const JOURNEY_MAX = 2;        // 0→1: img1→2 row wipe · 1→2: img2→3 row wipe
+const PRESS_RADIUS = 2.8;
+const WIPE_EDGE = 4.5;
+const WIPE_PRESS = 7;
+const IMAGE_BLEND = 0.35;
+const JOURNEY_MAX = CHAPTER_COUNT - 1; // 5 wipes across 6 paintings
 const JOURNEY_SCROLL = 0.00105;
 
 const canvasEl = document.getElementById("pixel-stage");
@@ -32,7 +37,7 @@ const paintHint = document.getElementById("paint-hint");
 const revealPctEl = document.getElementById("reveal-pct");
 
 let currentChapter = 1;
-let journey = 0;              // 0 = all page1 · 1 = all page2 · 2 = all page3
+let journey = 0;              // 0 = chapter1 · N-1 = last chapter fully revealed
 let journeyTarget = 0;
 let scrollSoundDebt = 0;
 let lastScrollSound = 0;
@@ -49,9 +54,12 @@ let soundEnabled = true;
 let masterBus = null;
 
 const HINTS = {
-  1: "Scroll down — rows flip into the next painting",
-  2: "Keep scrolling — the wipe continues into Contact",
-  3: "End of the path · scroll up to wipe back"
+  1: "Scroll — rows wipe into About",
+  2: "Keep scrolling — companies catch fire next",
+  3: "Keep scrolling — into the signal field",
+  4: "Keep scrolling — the painting speaks for itself",
+  5: "Keep scrolling — row ashore for Contact",
+  6: "End of the path · scroll up to wipe back"
 };
 
 function ensureAudio() {
@@ -262,16 +270,25 @@ function coverCrop(img, w, h, focus = { x: 0.5, y: 0.5 }) {
   return { sx, sy, sw, sh };
 }
 
-/** Half of a tall image, stretched across the landscape wall. */
-function halfSpreadCrop(img, half = "bottom", focusX = 0.5) {
-  const sh = img.height * 0.5;
-  const sy = half === "top" ? 0 : img.height - sh;
-  // Full width of the painting, laid out horizontally on the wall
-  void focusX;
-  return { sx: 0, sy, sw: img.width, sh };
+/** Letterbox / pillarbox so the entire painting fits — nothing cropped */
+function fitRect(img, w, h) {
+  const srcAspect = img.width / img.height;
+  const dstAspect = w / h;
+  let dw = w;
+  let dh = h;
+  let dx = 0;
+  let dy = 0;
+  if (srcAspect > dstAspect) {
+    dh = w / srcAspect;
+    dy = (h - dh) / 2;
+  } else {
+    dw = h * srcAspect;
+    dx = (w - dw) / 2;
+  }
+  return { dx, dy, dw, dh };
 }
 
-function sampleImage(img, opts = { mode: "cover", focus: { x: 0.5, y: 0.5 } }) {
+function sampleImage(img, opts = { mode: "fit" }) {
   const sample = document.createElement("canvas");
   sample.width = COLS;
   sample.height = ROWS;
@@ -279,18 +296,32 @@ function sampleImage(img, opts = { mode: "cover", focus: { x: 0.5, y: 0.5 } }) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
-  let crop;
-  if (opts.mode === "half-spread") {
-    crop = halfSpreadCrop(img, opts.half || "bottom", opts.focusX ?? 0.5);
-  } else if (opts.mode === "stretch") {
-    crop = { sx: 0, sy: 0, sw: img.width, sh: img.height };
+  // Dark bars around contained images (match scene)
+  ctx.fillStyle = "#060b14";
+  ctx.fillRect(0, 0, COLS, ROWS);
+
+  const mode = opts.mode || "fit";
+  if (mode === "fit") {
+    const { dx, dy, dw, dh } = fitRect(img, COLS, ROWS);
+    ctx.drawImage(img, 0, 0, img.width, img.height, dx, dy, dw, dh);
+  } else if (mode === "stretch") {
+    ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, COLS, ROWS);
+  } else if (mode === "half-spread") {
+    const { sx, sy, sw, sh } = halfSpreadCrop(img, opts.half || "bottom", opts.focusX ?? 0.5);
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, COLS, ROWS);
   } else {
-    crop = coverCrop(img, COLS, ROWS, opts.focus || { x: 0.5, y: 0.5 });
+    const { sx, sy, sw, sh } = coverCrop(img, COLS, ROWS, opts.focus || { x: 0.5, y: 0.5 });
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, COLS, ROWS);
   }
 
-  const { sx, sy, sw, sh } = crop;
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, COLS, ROWS);
   return ctx.getImageData(0, 0, COLS, ROWS).data;
+}
+
+function halfSpreadCrop(img, half = "bottom", focusX = 0.5) {
+  const sh = img.height * 0.5;
+  const sy = half === "top" ? 0 : img.height - sh;
+  void focusX;
+  return { sx: 0, sy, sw: img.width, sh };
 }
 
 function colorFromPixels(pixels, i) {
@@ -303,11 +334,10 @@ function buildCells(pixelsByChapter) {
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const i = r * COLS + c;
-      const chapterColors = {
-        1: colorFromPixels(pixelsByChapter[1], i),
-        2: colorFromPixels(pixelsByChapter[2], i),
-        3: colorFromPixels(pixelsByChapter[3], i)
-      };
+      const chapterColors = {};
+      for (let ch = 1; ch <= CHAPTER_COUNT; ch++) {
+        chapterColors[ch] = colorFromPixels(pixelsByChapter[ch], i);
+      }
       const x = (c - COLS / 2 + 0.5) * CELL;
       const y = (ROWS / 2 - r - 0.5) * CELL;
       const ny = r / ROWS;
@@ -320,13 +350,11 @@ function buildCells(pixelsByChapter) {
         chapterColors,
         fullColor: chapterColors[1].clone(),
         visited: 0,
-        // spring state: z=0 flush in wall, positive z = toward camera
         z: 0,
         vz: 0,
         target: 0
       });
 
-      // Flat rigid wall — every key same resting depth
       dummy.position.set(x, y, KEY_DEPTH * 0.5);
       dummy.scale.set(1, 1, 1);
       dummy.updateMatrix();
@@ -342,11 +370,20 @@ function fitCamera() {
   const w = window.innerWidth;
   const h = window.innerHeight;
   camera.aspect = w / Math.max(h, 1);
-  // Slight rake so key sides / edges read in 3D
-  const fit = Math.max(gridWidth / camera.aspect, gridHeight) * 0.78;
-  camera.position.set(0, -fit * 0.28, fit * 1.32);
-  camera.lookAt(0, 0.05, KEY_DEPTH * 0.15);
   camera.updateProjectionMatrix();
+
+  // Face-on (no tilt) — camera sits on the Z axis looking straight at the wall
+  const dist = 18;
+  camera.position.set(0, 0, dist);
+  camera.lookAt(0, 0, 0);
+
+  // Stretch the key wall to fill the entire screen
+  const vFov = (camera.fov * Math.PI) / 180;
+  const viewH = 2 * Math.tan(vFov / 2) * dist;
+  const viewW = viewH * camera.aspect;
+  group.scale.set(viewW / gridWidth, viewH / gridHeight, 1);
+  group.position.set(0, 0, 0);
+  group.rotation.set(0, 0, 0);
 }
 
 function resize() {
@@ -357,7 +394,11 @@ function resize() {
 function worldFromPointer() {
   raycaster.setFromCamera(pointer, camera);
   if (!raycaster.ray.intersectPlane(hitPlane, hitPoint)) return null;
-  return { x: hitPoint.x, y: hitPoint.y };
+  // Wall is non-uniformly scaled to fill the screen — map hit into local key space
+  return {
+    x: hitPoint.x / Math.max(group.scale.x, 0.0001),
+    y: hitPoint.y / Math.max(group.scale.y, 0.0001)
+  };
 }
 
 function setPointerFromEvent(e) {
@@ -382,7 +423,7 @@ function setPointerFromEvent(e) {
 }
 
 function measureProgress() {
-  if (revealPctEl) revealPctEl.textContent = currentChapter + " / 3";
+  if (revealPctEl) revealPctEl.textContent = currentChapter + " / " + CHAPTER_COUNT;
 
   document.querySelectorAll(".chapter-dot").forEach((btn) => {
     const n = Number(btn.dataset.goto);
@@ -393,29 +434,45 @@ function measureProgress() {
 }
 
 /**
- * Journey 0..2:
- *  0→1 = row wipe image1 → image2
- *  1→2 = row wipe image2 → image3
+ * Journey 0..(CHAPTER_COUNT-1):
+ * each integer step is one full top→bottom row wipe into the next painting.
+ * 0 = all ch1 · 1 = all ch2 · … · 5 = all ch6
  */
 function wipeState(j) {
-  const phase = j < 1 ? 0 : 1;
-  const local = phase === 0 ? j : j - 1; // 0..1 within phase
-  const frontier = local * ROWS;        // which row is currently flipping
-  const from = phase === 0 ? 1 : 2;
-  const to = phase === 0 ? 2 : 3;
-  return { phase, local, frontier, from, to };
+  const clamped = Math.max(0, Math.min(JOURNEY_MAX, j));
+
+  if (clamped <= 0.0001) {
+    return { from: 1, to: 1, frontier: -WIPE_EDGE * 2 };
+  }
+
+  const wipeIndex = Math.floor(clamped);
+  const local = clamped - wipeIndex;
+
+  // Exact chapter boundary — previous wipe finished
+  if (local < 0.0001) {
+    const chapter = wipeIndex + 1;
+    return {
+      from: Math.max(1, chapter - 1),
+      to: chapter,
+      frontier: ROWS + WIPE_EDGE * 2
+    };
+  }
+
+  return {
+    from: wipeIndex + 1,
+    to: Math.min(CHAPTER_COUNT, wipeIndex + 2),
+    frontier: local * ROWS
+  };
 }
 
 function chapterFromJourney(j) {
-  if (j < 0.2) return 1;
-  if (j < 1.2) return 2;
-  return 3;
+  // Switch UI shortly after a wipe into that chapter begins
+  const n = Math.floor(j + 0.2) + 1;
+  return Math.max(1, Math.min(CHAPTER_COUNT, n));
 }
 
 function journeyForChapter(n) {
-  if (n <= 1) return 0;
-  if (n === 2) return 1; // fully revealed page-2 image
-  return JOURNEY_MAX;
+  return Math.max(0, Math.min(JOURNEY_MAX, n - 1));
 }
 
 /** How far this row has flipped to the "to" image (0 = still from, 1 = fully to) */
@@ -453,14 +510,13 @@ function applyChapterUI(n) {
 }
 
 function goToChapter(n) {
-  n = Math.max(1, Math.min(3, n));
+  n = Math.max(1, Math.min(CHAPTER_COUNT, n));
   journeyTarget = journeyForChapter(n);
   applyChapterUI(n);
 }
 
 /**
- * Scroll drives one continuous wipe: rows flip top→bottom into the next image,
- * then again into the third.
+ * Scroll drives continuous wipes: rows flip top→bottom into each next image.
  */
 function handleScroll(deltaY) {
   journeyTarget = Math.max(0, Math.min(JOURNEY_MAX, journeyTarget + deltaY * JOURNEY_SCROLL));
@@ -627,10 +683,9 @@ function animate() {
     const sxy = 1 - press * 0.06;
     const sz = 1 - press * 0.18;
     dummy.scale.set(sxy, sxy, sz);
-    dummy.rotation.set(-press * 0.06, 0, 0);
+    dummy.rotation.set(0, 0, 0);
     dummy.updateMatrix();
     mesh.setMatrixAt(cell.i, dummy.matrix);
-    dummy.rotation.set(0, 0, 0);
 
     // Row-by-row image flip: above frontier = new painting, below = previous
     const mix = rowReveal(cell.r, frontier);
@@ -660,16 +715,14 @@ async function loadImage(src) {
 
 async function boot() {
   bindUI();
-  const [img1, img2, img3] = await Promise.all([
-    loadImage(IMAGE_BY_CHAPTER[1]),
-    loadImage(IMAGE_BY_CHAPTER[2]),
-    loadImage(IMAGE_BY_CHAPTER[3])
-  ]);
-  buildCells({
-    1: sampleImage(img1, IMAGE_SAMPLE[1]),
-    2: sampleImage(img2, IMAGE_SAMPLE[2]),
-    3: sampleImage(img3, IMAGE_SAMPLE[3])
+  const imgs = await Promise.all(
+    Array.from({ length: CHAPTER_COUNT }, (_, i) => loadImage(IMAGE_BY_CHAPTER[i + 1]))
+  );
+  const pixelsByChapter = {};
+  imgs.forEach((img, i) => {
+    pixelsByChapter[i + 1] = sampleImage(img, IMAGE_SAMPLE[i + 1]);
   });
+  buildCells(pixelsByChapter);
   resize();
   goToChapter(1);
   focus.x = 0;

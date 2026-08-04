@@ -6,7 +6,7 @@
 <title>Starpath — Portfolio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Sora:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Sora:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,49 +22,162 @@
           <span class="chapter-num">01</span>
           <span class="chapter-name">Home</span>
         </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="2" aria-label="Page 2: Work">
+        <button type="button" class="chapter-dot is-unlocked" data-goto="2" aria-label="Page 2: About">
           <span class="chapter-num">02</span>
+          <span class="chapter-name">About</span>
+        </button>
+        <button type="button" class="chapter-dot is-unlocked" data-goto="3" aria-label="Page 3: Projects">
+          <span class="chapter-num">03</span>
+          <span class="chapter-name">Projects</span>
+        </button>
+        <button type="button" class="chapter-dot is-unlocked" data-goto="4" aria-label="Page 4: Field">
+          <span class="chapter-num">04</span>
+          <span class="chapter-name">Field</span>
+        </button>
+        <button type="button" class="chapter-dot is-unlocked" data-goto="5" aria-label="Page 5: Work">
+          <span class="chapter-num">05</span>
           <span class="chapter-name">Work</span>
         </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="3" aria-label="Page 3: Contact">
-          <span class="chapter-num">03</span>
+        <button type="button" class="chapter-dot is-unlocked" data-goto="6" aria-label="Page 6: Contact">
+          <span class="chapter-num">06</span>
           <span class="chapter-name">Contact</span>
         </button>
       </nav>
-      <p class="paint-hint" id="paint-hint">Scroll to ripple rows · hover to click keys</p>
+      <p class="paint-hint" id="paint-hint">Scroll — rows wipe into the next painting</p>
     </header>
 
     <main class="storybook">
+      <!-- 01 Home · starry -->
       <section class="page is-active" id="page-1" data-chapter="1" aria-label="Home">
         <div class="page-copy page-copy--hero">
-          <p class="eyebrow">Page one · Home</p>
+          <p class="eyebrow">01 · Home</p>
           <h1 class="display">Starpath</h1>
-          <p class="lede">Hover cubes to press them. Scroll to wipe the next painting in, row by row.</p>
-          <p class="scroll-cue">Scroll to continue</p>
+          <p class="lede">A keyed wall of paintings. Hover to press. Scroll to wipe the next scene in, row by row.</p>
+          <p class="scroll-cue">Scroll to meet me</p>
         </div>
       </section>
 
-      <section class="page" id="page-2" data-chapter="2" aria-label="Work" hidden>
-        <div class="page-copy page-copy--hero">
-          <p class="eyebrow">Page two · Work</p>
-          <h2 class="display display--sm">Work</h2>
-          <p class="lede">Keep scrolling — the wipe finishes this painting, then starts flipping into Contact.</p>
-          <p class="scroll-cue">Scroll to continue the wipe</p>
+      <!-- 02 About · cat -->
+      <section class="page" id="page-2" data-chapter="2" aria-label="About" hidden>
+        <div class="page-copy page-copy--wide">
+          <p class="eyebrow">02 · About me</p>
+          <h2 class="display display--sm">Still calculating</h2>
+          <p class="lede">Designer-developer hybrid. I sketch systems, press pixels, and ship the weird ones that feel inevitable.</p>
+
+          <div class="ledger" aria-label="About facts">
+            <div class="ledger-row">
+              <span class="ledger-k">base</span>
+              <span class="ledger-v">Karachi · remote-first</span>
+            </div>
+            <div class="ledger-row">
+              <span class="ledger-k">focus</span>
+              <span class="ledger-v">product UI · motion · 3D-on-web</span>
+            </div>
+            <div class="ledger-row">
+              <span class="ledger-k">stack</span>
+              <span class="ledger-v">JS · Three.js · React · CSS that fights back</span>
+            </div>
+            <div class="ledger-row">
+              <span class="ledger-k">mode</span>
+              <span class="ledger-v">curious · loud color · quiet code</span>
+            </div>
+          </div>
+
+          <div class="stamp-rail" aria-label="Traits">
+            <span class="stamp">systems</span>
+            <span class="stamp">prototypes</span>
+            <span class="stamp">type</span>
+            <span class="stamp">sound</span>
+          </div>
+          <p class="scroll-cue">Scroll into the fire</p>
         </div>
       </section>
 
-      <section class="page" id="page-3" data-chapter="3" aria-label="Contact" hidden>
+      <!-- 03 Projects · elmo fire -->
+      <section class="page" id="page-3" data-chapter="3" aria-label="Projects" hidden>
+        <div class="page-copy page-copy--wide">
+          <p class="eyebrow">03 · Projects · companies</p>
+          <h2 class="display display--sm">Places on fire</h2>
+          <p class="lede">Teams and products I’ve keyed into — replace these stubs with your real trail.</p>
+
+          <ol class="fire-list" aria-label="Companies and projects">
+            <li>
+              <span class="fire-yr">2024</span>
+              <span class="fire-co">Northline</span>
+              <span class="fire-role">Design systems · dashboard rebuild</span>
+            </li>
+            <li>
+              <span class="fire-yr">2023</span>
+              <span class="fire-co">Orbit Mail</span>
+              <span class="fire-role">Onboarding · motion language</span>
+            </li>
+            <li>
+              <span class="fire-yr">2022</span>
+              <span class="fire-co">Harbor Labs</span>
+              <span class="fire-role">Creative tooling · WebGL toys</span>
+            </li>
+            <li>
+              <span class="fire-yr">2021</span>
+              <span class="fire-co">Studio Kite</span>
+              <span class="fire-role">Brand sites · campaign micros</span>
+            </li>
+          </ol>
+          <p class="scroll-cue">Scroll into the field</p>
+        </div>
+      </section>
+
+      <!-- 04 Field · desk painting (text lives in the image) -->
+      <section class="page page--image-only" id="page-4" data-chapter="4" aria-label="Field" hidden>
+        <h2 class="sr-only">Field</h2>
+      </section>
+
+      <!-- 05 Work · sunflower (old page 2) -->
+      <section class="page" id="page-5" data-chapter="5" aria-label="Work" hidden>
+        <div class="page-copy page-copy--wide">
+          <p class="eyebrow">05 · Selected work</p>
+          <h2 class="display display--sm">Keyed pieces</h2>
+          <p class="lede">A few artifacts from the wall — titles you can swap for case studies later.</p>
+
+          <ul class="key-strip" aria-label="Selected work">
+            <li>
+              <span class="key-cap">01</span>
+              <span class="key-title">Night Market OS</span>
+              <span class="key-meta">commerce · night mode · sticky cart</span>
+            </li>
+            <li>
+              <span class="key-cap">02</span>
+              <span class="key-title">Ripple Atlas</span>
+              <span class="key-meta">data map · scroll choreography</span>
+            </li>
+            <li>
+              <span class="key-cap">03</span>
+              <span class="key-title">Soft Switch</span>
+              <span class="key-meta">hardware UI · haptic copy</span>
+            </li>
+          </ul>
+          <p class="scroll-cue">Scroll to contact</p>
+        </div>
+      </section>
+
+      <!-- 06 Contact · boat (old page 3) -->
+      <section class="page" id="page-6" data-chapter="6" aria-label="Contact" hidden>
         <div class="page-copy page-copy--hero">
-          <p class="eyebrow">Page three · Contact</p>
-          <h2 class="display display--sm">Contact</h2>
-          <p class="lede">Full painting revealed. Scroll up to wipe back through Work.</p>
-          <p class="scroll-cue">Scroll up to return</p>
+          <p class="eyebrow">06 · Contact</p>
+          <h2 class="display display--sm">Row ashore</h2>
+          <p class="lede">End of the wipe. Say hello — these are placeholders until your real links land.</p>
+
+          <div class="cta-row">
+            <a class="btn btn-primary" href="mailto:hello@starpath.studio">hello@starpath.studio</a>
+            <a class="btn btn-ghost" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+            <a class="btn btn-ghost" href="https://www.linkedin.com/" target="_blank" rel="noreferrer">LinkedIn</a>
+          </div>
+          <p class="scroll-cue">Scroll up to travel back</p>
         </div>
       </section>
     </main>
 
     <footer class="page-footer">
-      <span class="reveal-meter" id="reveal-meter">Page <strong id="reveal-pct">1 / 3</strong></span>
+      <span class="reveal-meter" id="reveal-meter">Page <strong id="reveal-pct">1 / 6</strong></span>
       <div class="footer-actions">
         <button type="button" class="btn btn-tiny" id="btn-sound">Sound: on</button>
       </div>
@@ -78,6 +191,6 @@
     }
   }
   </script>
-  <script type="module" src="main.js?v=11"></script>
+  <script type="module" src="main.js?v=19"></script>
 </body>
 </html>
