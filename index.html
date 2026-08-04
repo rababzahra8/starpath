@@ -3,11 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Starpath — Portfolio</title>
+<meta name="description" content="Rabab Zahra — Full Stack Developer. Starpath is a keyed wall of paintings: mobile apps, web platforms, and APIs.">
+<meta name="theme-color" content="#0a1628">
+<meta name="author" content="Rabab Zahra">
+<meta property="og:title" content="Rabab Zahra · Starpath">
+<meta property="og:description" content="Full Stack Developer — mobile apps, web platforms, and the APIs that connect them.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<title>Rabab Zahra · Starpath</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Sora:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Sora:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=37">
 </head>
 <body>
   <div id="app">
@@ -17,28 +24,28 @@
 
     <header class="topbar">
       <a class="brand" href="#page-1" data-goto="1">Starpath</a>
-      <nav class="chapters" aria-label="Pages">
-        <button type="button" class="chapter-dot is-active is-unlocked" data-goto="1" aria-label="Page 1: Home">
+      <nav class="chapters" aria-label="Chapters">
+        <button type="button" class="chapter-dot is-active is-unlocked" data-goto="1" aria-label="Home" aria-current="page">
           <span class="chapter-num">01</span>
           <span class="chapter-name">Home</span>
         </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="2" aria-label="Page 2: About">
+        <button type="button" class="chapter-dot is-unlocked" data-goto="2" aria-label="About">
           <span class="chapter-num">02</span>
           <span class="chapter-name">About</span>
         </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="3" aria-label="Page 3: Projects">
+        <button type="button" class="chapter-dot is-unlocked" data-goto="3" aria-label="Work">
           <span class="chapter-num">03</span>
-          <span class="chapter-name">Projects</span>
+          <span class="chapter-name">Work</span>
         </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="4" aria-label="Page 4: Field">
+        <button type="button" class="chapter-dot is-unlocked" data-goto="4" aria-label="Field">
           <span class="chapter-num">04</span>
           <span class="chapter-name">Field</span>
         </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="5" aria-label="Page 5: Work">
+        <button type="button" class="chapter-dot is-unlocked" data-goto="5" aria-label="Path">
           <span class="chapter-num">05</span>
-          <span class="chapter-name">Work</span>
+          <span class="chapter-name">Path</span>
         </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="6" aria-label="Page 6: Contact">
+        <button type="button" class="chapter-dot is-unlocked" data-goto="6" aria-label="Contact">
           <span class="chapter-num">06</span>
           <span class="chapter-name">Contact</span>
         </button>
@@ -47,139 +54,101 @@
     </header>
 
     <main class="storybook">
-      <!-- 01 Home · starry -->
       <section class="page is-active" id="page-1" data-chapter="1" aria-label="Home">
-        <div class="page-copy page-copy--hero">
-          <p class="eyebrow">01 · Home</p>
-          <h1 class="display">Starpath</h1>
-          <p class="lede">A keyed wall of paintings. Hover to press. Scroll to wipe the next scene in, row by row.</p>
-          <p class="scroll-cue">Scroll to meet me</p>
+        <div class="plaque">
+          <p class="plaque-num">01</p>
+          <h1 class="display">Rabab Zahra</h1>
+          <p class="plaque-role">Full Stack Developer</p>
         </div>
       </section>
 
-      <!-- 02 About · cat -->
       <section class="page" id="page-2" data-chapter="2" aria-label="About" hidden>
-        <div class="page-copy page-copy--wide">
-          <p class="eyebrow">02 · About me</p>
-          <h2 class="display display--sm">Still calculating</h2>
-          <p class="lede">Designer-developer hybrid. I sketch systems, press pixels, and ship the weird ones that feel inevitable.</p>
-
-          <div class="ledger" aria-label="About facts">
-            <div class="ledger-row">
-              <span class="ledger-k">base</span>
-              <span class="ledger-v">Karachi · remote-first</span>
-            </div>
-            <div class="ledger-row">
-              <span class="ledger-k">focus</span>
-              <span class="ledger-v">product UI · motion · 3D-on-web</span>
-            </div>
-            <div class="ledger-row">
-              <span class="ledger-k">stack</span>
-              <span class="ledger-v">JS · Three.js · React · CSS that fights back</span>
-            </div>
-            <div class="ledger-row">
-              <span class="ledger-k">mode</span>
-              <span class="ledger-v">curious · loud color · quiet code</span>
-            </div>
-          </div>
-
-          <div class="stamp-rail" aria-label="Traits">
-            <span class="stamp">systems</span>
-            <span class="stamp">prototypes</span>
-            <span class="stamp">type</span>
-            <span class="stamp">sound</span>
-          </div>
-          <p class="scroll-cue">Scroll into the fire</p>
+        <div class="plaque">
+          <p class="plaque-num">02</p>
+          <h2 class="display display--sm">Lahore</h2>
+          <ul class="name-run" aria-label="Stack">
+            <li>React</li>
+            <li>React Native</li>
+            <li>NestJS</li>
+            <li>Rails</li>
+            <li>TypeScript</li>
+          </ul>
         </div>
       </section>
 
-      <!-- 03 Projects · elmo fire -->
-      <section class="page" id="page-3" data-chapter="3" aria-label="Projects" hidden>
-        <div class="page-copy page-copy--wide">
-          <p class="eyebrow">03 · Projects · companies</p>
-          <h2 class="display display--sm">Places on fire</h2>
-          <p class="lede">Teams and products I’ve keyed into — replace these stubs with your real trail.</p>
+      <section class="page" id="page-3" data-chapter="3" aria-label="Work" hidden>
+        <div class="plaque">
+          <p class="plaque-num">03 · work</p>
+          <nav class="name-links name-links--work" aria-label="Projects">
+            <a href="https://v0-memory-jar.vercel.app/" target="_blank" rel="noopener noreferrer">Digital Memory Jar</a>
+            <a href="https://living-ai-garden.r-rababzahra888.workers.dev/garden" target="_blank" rel="noopener noreferrer">Living AI Garden</a>
+            <a href="https://www.rababzahra.com" target="_blank" rel="noopener noreferrer">Stellar Navigator</a>
+          </nav>
+        </div>
+      </section>
 
-          <ol class="fire-list" aria-label="Companies and projects">
-            <li>
-              <span class="fire-yr">2024</span>
-              <span class="fire-co">Northline</span>
-              <span class="fire-role">Design systems · dashboard rebuild</span>
+      <section class="page" id="page-4" data-chapter="4" aria-label="Field" hidden>
+        <div class="plaque">
+          <p class="plaque-num">04 · field</p>
+          <h2 class="display display--sm">Field</h2>
+          <p class="plaque-role">BSCS · FAST-NUCES</p>
+          <ul class="name-run" aria-label="Notes">
+            <li>4+ years</li>
+            <li>10+ shipped</li>
+            <li>Remote</li>
+            <li>AI + BLE</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="page" id="page-5" data-chapter="5" aria-label="Path" hidden>
+        <div class="plaque plaque--path">
+          <p class="plaque-num">05 · path</p>
+          <ol class="company-trail" aria-label="Company experience">
+            <li class="company-row">
+              <span class="name-yr">2024</span>
+              <div class="company-body">
+                <span class="name-title">ByteMage</span>
+                <span class="company-role">Full Stack Engineer</span>
+                <span class="company-detail">React · RN · NestJS · BLE · AI microservices</span>
+              </div>
             </li>
-            <li>
-              <span class="fire-yr">2023</span>
-              <span class="fire-co">Orbit Mail</span>
-              <span class="fire-role">Onboarding · motion language</span>
+            <li class="company-row">
+              <span class="name-yr">2023</span>
+              <div class="company-body">
+                <span class="name-title">Devsinc</span>
+                <span class="company-role">Software Engineer</span>
+                <span class="company-detail">Rails modernization · production migrations</span>
+              </div>
             </li>
-            <li>
-              <span class="fire-yr">2022</span>
-              <span class="fire-co">Harbor Labs</span>
-              <span class="fire-role">Creative tooling · WebGL toys</span>
-            </li>
-            <li>
-              <span class="fire-yr">2021</span>
-              <span class="fire-co">Studio Kite</span>
-              <span class="fire-role">Brand sites · campaign micros</span>
+            <li class="company-row">
+              <span class="name-yr">2022</span>
+              <div class="company-body">
+                <span class="name-title">Devsinc</span>
+                <span class="company-role">Associate Software Engineer</span>
+                <span class="company-detail">Web apps · REST APIs · distributed Agile</span>
+              </div>
             </li>
           </ol>
-          <p class="scroll-cue">Scroll into the field</p>
         </div>
       </section>
 
-      <!-- 04 Field · desk painting (text lives in the image) -->
-      <section class="page page--image-only" id="page-4" data-chapter="4" aria-label="Field" hidden>
-        <h2 class="sr-only">Field</h2>
-      </section>
-
-      <!-- 05 Work · sunflower (old page 2) -->
-      <section class="page" id="page-5" data-chapter="5" aria-label="Work" hidden>
-        <div class="page-copy page-copy--wide">
-          <p class="eyebrow">05 · Selected work</p>
-          <h2 class="display display--sm">Keyed pieces</h2>
-          <p class="lede">A few artifacts from the wall — titles you can swap for case studies later.</p>
-
-          <ul class="key-strip" aria-label="Selected work">
-            <li>
-              <span class="key-cap">01</span>
-              <span class="key-title">Night Market OS</span>
-              <span class="key-meta">commerce · night mode · sticky cart</span>
-            </li>
-            <li>
-              <span class="key-cap">02</span>
-              <span class="key-title">Ripple Atlas</span>
-              <span class="key-meta">data map · scroll choreography</span>
-            </li>
-            <li>
-              <span class="key-cap">03</span>
-              <span class="key-title">Soft Switch</span>
-              <span class="key-meta">hardware UI · haptic copy</span>
-            </li>
-          </ul>
-          <p class="scroll-cue">Scroll to contact</p>
-        </div>
-      </section>
-
-      <!-- 06 Contact · boat (old page 3) -->
       <section class="page" id="page-6" data-chapter="6" aria-label="Contact" hidden>
-        <div class="page-copy page-copy--hero">
-          <p class="eyebrow">06 · Contact</p>
-          <h2 class="display display--sm">Row ashore</h2>
-          <p class="lede">End of the wipe. Say hello — these are placeholders until your real links land.</p>
-
-          <div class="cta-row">
-            <a class="btn btn-primary" href="mailto:hello@starpath.studio">hello@starpath.studio</a>
-            <a class="btn btn-ghost" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
-            <a class="btn btn-ghost" href="https://www.linkedin.com/" target="_blank" rel="noreferrer">LinkedIn</a>
-          </div>
-          <p class="scroll-cue">Scroll up to travel back</p>
+        <div class="plaque">
+          <p class="plaque-num">06</p>
+          <h2 class="display display--sm">Contact</h2>
+          <nav class="name-links" aria-label="Contact">
+            <a href="mailto:r.rababzahra888@gmail.com">Email</a>
+            <a href="https://github.com/rababzahra8" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://www.linkedin.com/in/rabab-zahra-880090216/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          </nav>
         </div>
       </section>
     </main>
 
     <footer class="page-footer">
-      <span class="reveal-meter" id="reveal-meter">Page <strong id="reveal-pct">1 / 6</strong></span>
       <div class="footer-actions">
-        <button type="button" class="btn btn-tiny" id="btn-sound">Sound: on</button>
+        <button type="button" class="btn btn-tiny" id="btn-sound" aria-pressed="true">Sound: on</button>
       </div>
     </footer>
   </div>
@@ -191,6 +160,6 @@
     }
   }
   </script>
-  <script type="module" src="main.js?v=19"></script>
+  <script type="module" src="main.js?v=37"></script>
 </body>
 </html>

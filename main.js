@@ -2,12 +2,12 @@ import * as THREE from "three";
 
 const CHAPTER_COUNT = 6;
 const IMAGE_BY_CHAPTER = {
-  1: "./assets/starry.jpg?v=16",           // Home
-  2: "./assets/about-cat.jpg?v=19",        // About
-  3: "./assets/projects-fire.jpg",    // Projects / companies
-  4: "./assets/field-cosmos.jpg?v=18",     // Field
-  5: "./assets/sunflower-night.jpg?v=17",  // Work
-  6: "./assets/solar-flare.jpg"       // Contact (kept)
+  1: "./assets/starry.jpg?v=16",
+  2: "./assets/about-cat.jpg?v=19",
+  3: "./assets/projects-fire.jpg",
+  4: "./assets/field-cosmos.jpg?v=18",
+  5: "./assets/sunflower-night.jpg?v=17",
+  6: "./assets/solar-flare.jpg"
 };
 const IMAGE_SAMPLE = {
   1: { mode: "stretch" },
@@ -29,12 +29,11 @@ const PRESS_RADIUS = 2.8;
 const WIPE_EDGE = 4.5;
 const WIPE_PRESS = 7;
 const IMAGE_BLEND = 0.35;
-const JOURNEY_MAX = CHAPTER_COUNT - 1; // 5 wipes across 6 paintings
+const JOURNEY_MAX = CHAPTER_COUNT - 1;
 const JOURNEY_SCROLL = 0.00105;
 
 const canvasEl = document.getElementById("pixel-stage");
 const paintHint = document.getElementById("paint-hint");
-const revealPctEl = document.getElementById("reveal-pct");
 
 let currentChapter = 1;
 let journey = 0;              // 0 = chapter1 · N-1 = last chapter fully revealed
@@ -51,14 +50,15 @@ let lastClickCell = -1;
 let lastClickTime = 0;
 let audioCtx = null;
 let soundEnabled = true;
+let soundUnlocked = false;
 let masterBus = null;
 
 const HINTS = {
   1: "Scroll — rows wipe into About",
-  2: "Keep scrolling — companies catch fire next",
-  3: "Keep scrolling — into the signal field",
-  4: "Keep scrolling — the painting speaks for itself",
-  5: "Keep scrolling — row ashore for Contact",
+  2: "Keep scrolling — Work",
+  3: "Keep scrolling — Field",
+  4: "Keep scrolling — Path",
+  5: "Keep scrolling — Contact",
   6: "End of the path · scroll up to wipe back"
 };
 
@@ -76,17 +76,49 @@ function ensureAudio() {
     masterBus.connect(filter);
     filter.connect(audioCtx.destination);
   }
-  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume().catch(() => {});
+  }
   return audioCtx;
+}
+
+/**
+ * Browsers (esp. Safari) need resume + a real start() inside a user gesture.
+ * Wheel/scroll alone will not unlock audio.
+ */
+function unlockAudioFromGesture() {
+  const ctx = ensureAudio();
+  if (!ctx || !masterBus) return;
+  try {
+    const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.value = 0.00001;
+    src.connect(g);
+    g.connect(masterBus);
+    src.start(0);
+    soundUnlocked = true;
+  } catch {
+    /* ignore */
+  }
 }
 
 /**
  * Soft laptop-style key: short filtered noise only — no harsh buzz.
  */
-function playKeyClick(intensity = 1, pitch = 0.5) {
+function playKeyClick(intensity = 1, pitch = 0.5, retried = false) {
   if (!soundEnabled) return;
   const ctx = ensureAudio();
   if (!ctx || !masterBus) return;
+  if (ctx.state !== "running") {
+    if (!retried) {
+      ctx.resume()
+        .then(() => playKeyClick(intensity, pitch, true))
+        .catch(() => {});
+    }
+    return;
+  }
 
   const t0 = ctx.currentTime;
   const vol = 0.045 * Math.min(1, intensity);
@@ -423,13 +455,13 @@ function setPointerFromEvent(e) {
 }
 
 function measureProgress() {
-  if (revealPctEl) revealPctEl.textContent = currentChapter + " / " + CHAPTER_COUNT;
-
   document.querySelectorAll(".chapter-dot").forEach((btn) => {
     const n = Number(btn.dataset.goto);
     btn.disabled = false;
     btn.classList.add("is-unlocked");
     btn.classList.toggle("is-active", n === currentChapter);
+    if (n === currentChapter) btn.setAttribute("aria-current", "page");
+    else btn.removeAttribute("aria-current");
   });
 }
 
@@ -559,20 +591,39 @@ function bindUI() {
 
   window.addEventListener("pointermove", setPointerFromEvent, { passive: true });
   window.addEventListener("pointerdown", (e) => {
-    ensureAudio();
+    unlockAudioFromGesture();
     setPointerFromEvent(e);
+  }, { passive: true });
+  window.addEventListener("touchstart", () => {
+    unlockAudioFromGesture();
   }, { passive: true });
   window.addEventListener("resize", resize);
 
   document.getElementById("btn-sound")?.addEventListener("click", () => {
+    const wasLocked = !soundUnlocked || !audioCtx || audioCtx.state !== "running";
+    unlockAudioFromGesture();
+    // First click only unlocks if audio was still locked (avoids off→on ritual).
+    if (wasLocked) {
+      soundEnabled = true;
+      const btn = document.getElementById("btn-sound");
+      if (btn) {
+        btn.textContent = "Sound: on";
+        btn.setAttribute("aria-pressed", "true");
+      }
+      playKeyClick();
+      return;
+    }
     soundEnabled = !soundEnabled;
-    ensureAudio();
     const btn = document.getElementById("btn-sound");
-    if (btn) btn.textContent = soundEnabled ? "Sound: on" : "Sound: off";
+    if (btn) {
+      btn.textContent = soundEnabled ? "Sound: on" : "Sound: off";
+      btn.setAttribute("aria-pressed", soundEnabled ? "true" : "false");
+    }
     if (soundEnabled) playKeyClick();
   });
 
   window.addEventListener("keydown", (e) => {
+    unlockAudioFromGesture();
     const k = e.key.toLowerCase();
     if (k === "pagedown" || (k === " " && !e.target.closest("input, textarea"))) {
       e.preventDefault();
