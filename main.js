@@ -15,40 +15,43 @@ const IMAGE_SAMPLE = {
 const COLS = 140;
 const ROWS = 96;
 const CELL = 0.145;
-const KEY_DEPTH = 0.16;
-const KEY_TRAVEL = 0.85;
-const SPRING = 0.16;          // soft ease — less stiff
-const DAMPING = 0.86;
-const PRESS_RADIUS = 1.15;
-const WAVE_CHAPTER = 2;
-const WAVE_HALF = 14;         // wide smooth band
-const WAVE_LERP = 0.1;        // how fast the ripple follows the scroll
-const IMAGE_BLEND = 0.22;     // snappy wall color crossfade between pages
+const KEY_GAP = 0.84;         // footprint vs cell — gaps read as key edges
+const KEY_DEPTH = 0.26;       // taller caps so sides catch light
+const KEY_TRAVEL = 0.95;      // deeper press under the cursor
+const SPRING = 0.28;          // snappier key feel
+const DAMPING = 0.78;
+const PRESS_RADIUS = 2.8;     // wider cursor wake
+const WIPE_EDGE = 4.5;        // soft rows at the image frontier
+const WIPE_PRESS = 7;         // how wide the key press band is at the frontier
+const IMAGE_BLEND = 0.35;     // snappy per-row color settle
+const JOURNEY_MAX = 2;        // 0→1: img1→2 row wipe · 1→2: img2→3 row wipe
+const JOURNEY_SCROLL = 0.00105;
 
 const canvasEl = document.getElementById("pixel-stage");
 const paintHint = document.getElementById("paint-hint");
 const revealPctEl = document.getElementById("reveal-pct");
 
 let currentChapter = 1;
-let waveCenter = ROWS * 0.35;
-let waveTarget = waveCenter;
-let waveActive = 0;           // 0..1 fade of scroll wave strength
-let scrollLocked = false;
+let journey = 0;              // 0 = all page1 · 1 = all page2 · 2 = all page3
+let journeyTarget = 0;
 let scrollSoundDebt = 0;
 let lastScrollSound = 0;
-let edgeHold = 0;
+let lastFrontierRow = -1;
 
-const focus = { x: 0, y: 0, active: true };
+const focus = { x: 0, y: 0, active: true, speed: 0 };
+const prevFocus = { x: 0, y: 0 };
 const keys = new Set();
 const KEY_SPEED = 0.16;
 let lastClickCell = -1;
+let lastClickTime = 0;
 let audioCtx = null;
 let soundEnabled = true;
+let masterBus = null;
 
 const HINTS = {
-  1: "Scroll to change page · hover keys click",
-  2: "Scroll smoothly — the wall glides with soft ticks",
-  3: "Scroll up for Work · hover still clicks keys"
+  1: "Scroll down — rows flip into the next painting",
+  2: "Keep scrolling — the wipe continues into Contact",
+  3: "End of the path · scroll up to wipe back"
 };
 
 function ensureAudio() {
@@ -56,43 +59,60 @@ function ensureAudio() {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
     audioCtx = new AC();
+    masterBus = audioCtx.createGain();
+    masterBus.gain.value = 0.55;
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 3200;
+    filter.Q.value = 0.7;
+    masterBus.connect(filter);
+    filter.connect(audioCtx.destination);
   }
   if (audioCtx.state === "suspended") audioCtx.resume();
   return audioCtx;
 }
 
-/** Soft muted key tick — quieter, lower, less harsh */
-function playKeyClick(intensity = 1) {
+/**
+ * Soft laptop-style key: short filtered noise only — no harsh buzz.
+ */
+function playKeyClick(intensity = 1, pitch = 0.5) {
   if (!soundEnabled) return;
   const ctx = ensureAudio();
-  if (!ctx) return;
+  if (!ctx || !masterBus) return;
 
   const t0 = ctx.currentTime;
-  const dur = 0.05 + Math.random() * 0.02;
-  const frames = Math.floor(ctx.sampleRate * dur);
+  const vol = 0.045 * Math.min(1, intensity);
+  const p = 0.85 + pitch * 0.35;
+
+  const dur = 0.018 + Math.random() * 0.01;
+  const frames = Math.max(1, Math.floor(ctx.sampleRate * dur));
   const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < frames; i++) {
-    const env = Math.pow(1 - i / frames, 1.8);
+    const env = Math.pow(1 - i / frames, 3.2);
     data[i] = (Math.random() * 2 - 1) * env;
   }
 
   const src = ctx.createBufferSource();
   src.buffer = buffer;
 
-  const filter = ctx.createBiquadFilter();
-  filter.type = "bandpass";
-  filter.frequency.value = 900 + Math.random() * 500;
-  filter.Q.value = 0.55;
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 1800 * p + Math.random() * 200;
+  bp.Q.value = 1.1;
+
+  const hp = ctx.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 600;
 
   const gain = ctx.createGain();
-  const vol = 0.045 * Math.min(1, intensity);
   gain.gain.setValueAtTime(vol, t0);
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
 
-  src.connect(filter);
-  filter.connect(gain);
-  gain.connect(ctx.destination);
+  src.connect(hp);
+  hp.connect(bp);
+  bp.connect(gain);
+  gain.connect(masterBus);
   src.start(t0);
   src.stop(t0 + dur);
 }
@@ -108,16 +128,21 @@ function tickIfNewCell() {
   const idx = cellIndexFromFocus();
   if (idx < 0 || idx === lastClickCell) return;
   lastClickCell = idx;
-  playKeyClick();
+  const now = performance.now();
+  if (now - lastClickTime < 28) return;
+  lastClickTime = now;
+
+  const pitch = ((idx % COLS) / COLS) * 0.6 + (Math.floor(idx / COLS) / ROWS) * 0.4;
+  playKeyClick(0.7 + Math.min(0.35, focus.speed), pitch);
 }
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#0a1628");
+scene.background = new THREE.Color("#060b14");
 
 const gridWidth = COLS * CELL;
 const gridHeight = ROWS * CELL;
 
-const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
 camera.position.set(0, -3.2, 16);
 camera.lookAt(0, 0.4, 0);
 
@@ -128,17 +153,68 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference: "high-performance"
 });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setClearColor(0x0a1628, 1);
+renderer.setClearColor(0x060b14, 1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const group = new THREE.Group();
 scene.add(group);
 
-// Full-cell cubes — no gaps, no photo peeking through
-const geometry = new THREE.BoxGeometry(CELL * 1.02, CELL * 1.02, KEY_DEPTH);
-const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+// Soft keycap lighting — tops bright, sides fall off like real keys
+const ambient = new THREE.AmbientLight(0x9eb6d4, 0.5);
+scene.add(ambient);
+const keyLight = new THREE.DirectionalLight(0xfff2d8, 1.25);
+keyLight.position.set(-4, 8, 14);
+scene.add(keyLight);
+const fillLight = new THREE.DirectionalLight(0x6a8cff, 0.4);
+fillLight.position.set(6, -2, 8);
+scene.add(fillLight);
+const rimLight = new THREE.DirectionalLight(0xffc978, 0.28);
+rimLight.position.set(0, -10, 4);
+scene.add(rimLight);
+
+/** Rounded rectangle keycap profile (keyboard-style edges) */
+function createKeycapGeometry(size, depth) {
+  const radius = size * 0.22;
+  const hw = size / 2;
+  const hh = size / 2;
+  const shape = new THREE.Shape();
+  shape.moveTo(-hw + radius, -hh);
+  shape.lineTo(hw - radius, -hh);
+  shape.quadraticCurveTo(hw, -hh, hw, -hh + radius);
+  shape.lineTo(hw, hh - radius);
+  shape.quadraticCurveTo(hw, hh, hw - radius, hh);
+  shape.lineTo(-hw + radius, hh);
+  shape.quadraticCurveTo(-hw, hh, -hw, hh - radius);
+  shape.lineTo(-hw, -hh + radius);
+  shape.quadraticCurveTo(-hw, -hh, -hw + radius, -hh);
+
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth,
+    bevelEnabled: true,
+    bevelThickness: depth * 0.14,
+    bevelSize: size * 0.1,
+    bevelOffset: -size * 0.02,
+    bevelSegments: 2,
+    curveSegments: 5
+  });
+  geo.translate(0, 0, -depth / 2);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+const keySize = CELL * KEY_GAP;
+const geometry = createKeycapGeometry(keySize, KEY_DEPTH);
+const material = new THREE.MeshStandardMaterial({
+  color: 0xffffff,
+  roughness: 0.42,
+  metalness: 0.05,
+  flatShading: false
+});
 
 const count = COLS * ROWS;
 const mesh = new THREE.InstancedMesh(geometry, material, count);
+mesh.castShadow = false;
+mesh.receiveShadow = false;
 group.add(mesh);
 
 const cells = [];
@@ -266,10 +342,10 @@ function fitCamera() {
   const w = window.innerWidth;
   const h = window.innerHeight;
   camera.aspect = w / Math.max(h, 1);
-  // More face-on so keys clearly pop toward you (not a wavy hillside)
+  // Slight rake so key sides / edges read in 3D
   const fit = Math.max(gridWidth / camera.aspect, gridHeight) * 0.78;
-  camera.position.set(0, -fit * 0.08, fit * 1.35);
-  camera.lookAt(0, 0, 0);
+  camera.position.set(0, -fit * 0.28, fit * 1.32);
+  camera.lookAt(0, 0.05, KEY_DEPTH * 0.15);
   camera.updateProjectionMatrix();
 }
 
@@ -293,6 +369,11 @@ function setPointerFromEvent(e) {
   pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
   const w = worldFromPointer();
   if (w) {
+    const dx = w.x - prevFocus.x;
+    const dy = w.y - prevFocus.y;
+    focus.speed = Math.min(1.2, Math.hypot(dx, dy) / CELL);
+    prevFocus.x = w.x;
+    prevFocus.y = w.y;
     focus.x = w.x;
     focus.y = w.y;
     focus.active = true;
@@ -311,28 +392,52 @@ function measureProgress() {
   });
 }
 
-function goToChapter(n) {
-  n = Math.max(1, Math.min(3, n));
+/**
+ * Journey 0..2:
+ *  0→1 = row wipe image1 → image2
+ *  1→2 = row wipe image2 → image3
+ */
+function wipeState(j) {
+  const phase = j < 1 ? 0 : 1;
+  const local = phase === 0 ? j : j - 1; // 0..1 within phase
+  const frontier = local * ROWS;        // which row is currently flipping
+  const from = phase === 0 ? 1 : 2;
+  const to = phase === 0 ? 2 : 3;
+  return { phase, local, frontier, from, to };
+}
+
+function chapterFromJourney(j) {
+  if (j < 0.2) return 1;
+  if (j < 1.2) return 2;
+  return 3;
+}
+
+function journeyForChapter(n) {
+  if (n <= 1) return 0;
+  if (n === 2) return 1; // fully revealed page-2 image
+  return JOURNEY_MAX;
+}
+
+/** How far this row has flipped to the "to" image (0 = still from, 1 = fully to) */
+function rowReveal(r, frontier) {
+  return Math.max(0, Math.min(1, (frontier - r) / WIPE_EDGE));
+}
+
+/** Key press strength along the single wipe frontier */
+function frontierPress(r, frontier, scrolling) {
+  const d = Math.abs(r - frontier);
+  if (d > WIPE_PRESS) return 0;
+  const u = d / WIPE_PRESS;
+  const strength = Math.pow(1 - u * u, 1.5);
+  return strength * (scrolling ? 0.95 : 0.35);
+}
+
+function applyChapterUI(n) {
   if (n === currentChapter) {
     measureProgress();
     return;
   }
   currentChapter = n;
-
-  // Snap wall to the new page image so the swap is obvious
-  for (const cell of cells) {
-    cell.fullColor.copy(cell.chapterColors[n]);
-    mesh.setColorAt(cell.i, cell.fullColor);
-  }
-  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-
-  if (n !== WAVE_CHAPTER) {
-    waveActive = 0;
-    for (const cell of cells) cell.target = 0;
-  } else {
-    waveTarget = waveCenter;
-    waveActive = 0.5;
-  }
 
   document.querySelectorAll(".page").forEach((page) => {
     const ch = Number(page.dataset.chapter);
@@ -347,75 +452,28 @@ function goToChapter(n) {
   measureProgress();
 }
 
-/** Soft gaussian band of targets from continuous waveCenter */
-function updateScrollWaveTargets() {
-  if (currentChapter !== WAVE_CHAPTER || waveActive < 0.02) {
-    if (currentChapter !== WAVE_CHAPTER) return;
-    // fade targets down gently
-    for (const cell of cells) {
-      cell.target *= 0.9;
-      if (cell.target < 0.02) cell.target = 0;
-    }
-    return;
-  }
-
-  for (const cell of cells) {
-    const d = Math.abs(cell.r - waveCenter);
-    if (d > WAVE_HALF) {
-      cell.target = 0;
-      continue;
-    }
-    // smooth falloff (not a hard step)
-    const u = d / WAVE_HALF;
-    const strength = Math.pow(1 - u * u, 1.6) * waveActive;
-    cell.target = strength;
-  }
+function goToChapter(n) {
+  n = Math.max(1, Math.min(3, n));
+  journeyTarget = journeyForChapter(n);
+  applyChapterUI(n);
 }
 
 /**
- * Page 2: continuous smooth scroll ripple (no chunky steps).
- * Other pages: scroll still changes page.
+ * Scroll drives one continuous wipe: rows flip top→bottom into the next image,
+ * then again into the third.
  */
 function handleScroll(deltaY) {
-  if (currentChapter === WAVE_CHAPTER) {
-    // Continuous — no lock stutter
-    waveTarget += deltaY * 0.028;
-    waveActive = Math.min(1, waveActive + 0.35);
+  journeyTarget = Math.max(0, Math.min(JOURNEY_MAX, journeyTarget + deltaY * JOURNEY_SCROLL));
 
-    if (waveTarget > ROWS - 1) {
-      edgeHold += deltaY;
-      waveTarget = ROWS - 1;
-      if (edgeHold > 180) {
-        edgeHold = 0;
-        goToChapter(3);
-      }
-    } else if (waveTarget < 0) {
-      edgeHold += -deltaY;
-      waveTarget = 0;
-      if (edgeHold > 180) {
-        edgeHold = 0;
-        goToChapter(1);
-      }
-    } else {
-      edgeHold = 0;
-    }
-
-    scrollSoundDebt += Math.abs(deltaY);
-    const now = performance.now();
-    if (scrollSoundDebt > 28 && now - lastScrollSound > 70) {
-      scrollSoundDebt = 0;
-      lastScrollSound = now;
-      playKeyClick(0.55 + Math.min(0.45, Math.abs(deltaY) / 80));
-    }
-    return;
+  scrollSoundDebt += Math.abs(deltaY);
+  const now = performance.now();
+  if (scrollSoundDebt > 36 && now - lastScrollSound > 48) {
+    scrollSoundDebt = 0;
+    lastScrollSound = now;
+    const { frontier } = wipeState(journeyTarget);
+    const pitch = Math.max(0, Math.min(1, frontier / ROWS));
+    playKeyClick(0.45 + Math.min(0.3, Math.abs(deltaY) / 140), pitch);
   }
-
-  if (scrollLocked) return;
-  if (Math.abs(deltaY) < 14) return;
-  scrollLocked = true;
-  if (deltaY > 0) goToChapter(currentChapter + 1);
-  else goToChapter(currentChapter - 1);
-  window.setTimeout(() => { scrollLocked = false; }, 550);
 }
 
 function bindUI() {
@@ -494,13 +552,24 @@ function animate() {
   requestAnimationFrame(animate);
   updateKeyboardFocus();
 
-  // Smooth follow for scroll ripple
-  if (currentChapter === WAVE_CHAPTER) {
-    waveCenter += (waveTarget - waveCenter) * WAVE_LERP;
-    waveActive *= 0.985; // gentle settle when you stop scrolling
-    if (waveActive < 0.04) waveActive = 0;
-    updateScrollWaveTargets();
+  // Ease the wipe frontier down the wall
+  journey += (journeyTarget - journey) * 0.085;
+  if (Math.abs(journeyTarget - journey) < 0.0005) journey = journeyTarget;
+
+  const scrolling = Math.abs(journeyTarget - journey) > 0.002;
+  const { frontier, from, to } = wipeState(journey);
+
+  const nextChapter = chapterFromJourney(journey);
+  if (nextChapter !== currentChapter) applyChapterUI(nextChapter);
+
+  // Soft tick when the frontier crosses a new row
+  const fRow = Math.floor(frontier);
+  if (scrolling && fRow !== lastFrontierRow && fRow >= 0 && fRow < ROWS) {
+    lastFrontierRow = fRow;
+    if (fRow % 2 === 0) playKeyClick(0.28, fRow / ROWS);
   }
+
+  focus.speed *= 0.88;
 
   let focusC = -1;
   let focusR = -1;
@@ -510,28 +579,40 @@ function animate() {
     focusR = Math.round(ROWS / 2 - focus.y / CELL - 0.5);
   }
 
-  const radiusSq = PRESS_RADIUS * PRESS_RADIUS;
-  const chapterColorKey = currentChapter;
+  const wakeRadius = PRESS_RADIUS + focus.speed * 1.8;
+  const wakeRadiusSq = wakeRadius * wakeRadius;
+
+  group.position.set(0, 0, 0);
 
   for (const cell of cells) {
-    let want = cell.target;
+    // Single wipe band presses keys as each row flips to the next image
+    let want = frontierPress(cell.r, frontier, scrolling);
+
     if (hoverLive) {
       const dc = cell.c - focusC;
       const dr = cell.r - focusR;
       const gridDist = dc * dc + dr * dr;
       let hover = 0;
       if (gridDist === 0) hover = 1;
-      else if (gridDist === 1) hover = 0.65;
-      else if (gridDist === 2) hover = 0.3;
+      else if (gridDist === 1) hover = 0.85;
+      else if (gridDist === 2) hover = 0.55;
+      else if (gridDist <= 4) hover = 0.32;
+      else if (gridDist <= 8) hover = 0.16;
       else {
-        const dx = cell.x - focus.x;
-        const dy = cell.y - focus.y;
-        if (dx * dx + dy * dy < radiusSq * CELL * CELL) hover = 0.12;
+        const dx = (cell.x - focus.x) / CELL;
+        const dy = (cell.y - focus.y) / CELL;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < wakeRadiusSq) {
+          const u = Math.sqrt(d2) / wakeRadius;
+          hover = Math.pow(1 - u, 1.6) * (0.55 + focus.speed * 0.35);
+        }
       }
-      want = Math.max(want, hover);
+      want = Math.max(want, hover * (1 + focus.speed * 0.45));
     }
 
-    const pressedZ = KEY_TRAVEL * want;
+    cell.target = want;
+
+    const pressedZ = KEY_TRAVEL * Math.min(1.15, want);
     const force = (pressedZ - cell.z) * SPRING;
     cell.vz = (cell.vz + force) * DAMPING;
     cell.z += cell.vz;
@@ -542,14 +623,24 @@ function animate() {
     }
 
     dummy.position.set(cell.x, cell.y, KEY_DEPTH * 0.5 + cell.z);
-    dummy.scale.set(1, 1, 1);
+    const press = Math.min(1, Math.max(0, cell.z / Math.max(KEY_TRAVEL, 0.001)));
+    const sxy = 1 - press * 0.06;
+    const sz = 1 - press * 0.18;
+    dummy.scale.set(sxy, sxy, sz);
+    dummy.rotation.set(-press * 0.06, 0, 0);
     dummy.updateMatrix();
     mesh.setMatrixAt(cell.i, dummy.matrix);
+    dummy.rotation.set(0, 0, 0);
 
-    cell.fullColor.lerp(cell.chapterColors[chapterColorKey], IMAGE_BLEND);
+    // Row-by-row image flip: above frontier = new painting, below = previous
+    const mix = rowReveal(cell.r, frontier);
+    const cFrom = cell.chapterColors[from];
+    const cTo = cell.chapterColors[to];
+    tmpColor.copy(cFrom).lerp(cTo, mix);
+    cell.fullColor.lerp(tmpColor, IMAGE_BLEND);
     tmpColor.copy(cell.fullColor);
-    if (cell.z > 0.04) {
-      tmpColor.lerp(pressTint, Math.min(1, cell.z / KEY_TRAVEL) * 0.14);
+    if (cell.z > 0.03) {
+      tmpColor.lerp(pressTint, Math.min(1, cell.z / KEY_TRAVEL) * 0.18);
     }
     mesh.setColorAt(cell.i, tmpColor);
   }
@@ -557,7 +648,6 @@ function animate() {
   mesh.instanceMatrix.needsUpdate = true;
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 
-  group.position.set(0, 0, 0);
   renderer.render(scene, camera);
 }
 
