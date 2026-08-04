@@ -1,165 +1,337 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Rabab Zahra — Full Stack Developer. Starpath is a keyed wall of paintings: mobile apps, web platforms, and APIs.">
-<meta name="theme-color" content="#0a1628">
-<meta name="author" content="Rabab Zahra">
-<meta property="og:title" content="Rabab Zahra · Starpath">
-<meta property="og:description" content="Full Stack Developer — mobile apps, web platforms, and the APIs that connect them.">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
-<title>Rabab Zahra · Starpath</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Sora:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=37">
-</head>
-<body>
-  <div id="app">
-    <canvas id="pixel-stage" aria-hidden="true"></canvas>
-    <div class="vignette" aria-hidden="true"></div>
-    <div class="star-dust" aria-hidden="true"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Rabab Zahra — engineer, builder, forever curious. Products where software, design, AI, and hardware meet."
+    />
+    <meta name="theme-color" content="#0a1628" />
+    <meta name="author" content="Rabab Zahra" />
+    <meta property="og:title" content="Rabab Zahra" />
+    <meta
+      property="og:description"
+      content="Engineer. Builder. Forever curious."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>Rabab Zahra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Sora:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="pixel-stage" aria-hidden="true"></canvas>
+      <div class="vignette" aria-hidden="true"></div>
+      <div class="star-dust" aria-hidden="true"></div>
 
-    <header class="topbar">
-      <a class="brand" href="#page-1" data-goto="1">Starpath</a>
-      <nav class="chapters" aria-label="Chapters">
-        <button type="button" class="chapter-dot is-active is-unlocked" data-goto="1" aria-label="Home" aria-current="page">
-          <span class="chapter-num">01</span>
-          <span class="chapter-name">Home</span>
-        </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="2" aria-label="About">
-          <span class="chapter-num">02</span>
-          <span class="chapter-name">About</span>
-        </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="3" aria-label="Work">
-          <span class="chapter-num">03</span>
-          <span class="chapter-name">Work</span>
-        </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="4" aria-label="Field">
-          <span class="chapter-num">04</span>
-          <span class="chapter-name">Field</span>
-        </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="5" aria-label="Path">
-          <span class="chapter-num">05</span>
-          <span class="chapter-name">Path</span>
-        </button>
-        <button type="button" class="chapter-dot is-unlocked" data-goto="6" aria-label="Contact">
-          <span class="chapter-num">06</span>
-          <span class="chapter-name">Contact</span>
-        </button>
-      </nav>
-      <p class="paint-hint" id="paint-hint">Scroll — rows wipe into the next painting</p>
-    </header>
+      <header class="topbar">
+        <a class="brand" href="#page-1" data-goto="1">Rabab</a>
+        <nav class="chapters" aria-label="Chapters">
+          <button
+            type="button"
+            class="chapter-dot is-active is-unlocked"
+            data-goto="1"
+            aria-label="Origin"
+            aria-current="page"
+          >
+            <span class="chapter-num">01</span>
+            <span class="chapter-name">Origin</span>
+          </button>
+          <button
+            type="button"
+            class="chapter-dot is-unlocked"
+            data-goto="2"
+            aria-label="Playground"
+          >
+            <span class="chapter-num">02</span>
+            <span class="chapter-name">Playground</span>
+          </button>
+          <button
+            type="button"
+            class="chapter-dot is-unlocked"
+            data-goto="3"
+            aria-label="Experiments"
+          >
+            <span class="chapter-num">03</span>
+            <span class="chapter-name">Experiments</span>
+          </button>
+          <button
+            type="button"
+            class="chapter-dot is-unlocked"
+            data-goto="4"
+            aria-label="Garden"
+          >
+            <span class="chapter-num">04</span>
+            <span class="chapter-name">Garden</span>
+          </button>
+          <button
+            type="button"
+            class="chapter-dot is-unlocked"
+            data-goto="5"
+            aria-label="Connect"
+          >
+            <span class="chapter-num">05</span>
+            <span class="chapter-name">Connect</span>
+          </button>
+        </nav>
+        <p class="paint-hint" id="paint-hint">Scroll — paint the next wall</p>
+      </header>
 
-    <main class="storybook">
-      <section class="page is-active" id="page-1" data-chapter="1" aria-label="Home">
-        <div class="plaque">
-          <p class="plaque-num">01</p>
-          <h1 class="display">Rabab Zahra</h1>
-          <p class="plaque-role">Full Stack Developer</p>
+      <main class="storybook">
+        <section
+          class="page is-active"
+          id="page-1"
+          data-chapter="1"
+          aria-label="Origin"
+        >
+          <div class="plaque plaque--origin">
+            <p class="plaque-num">01 origin</p>
+            <h1 class="display display--name">Rabab Zahra</h1>
+            <p class="plaque-role">
+              Full-Stack Engineer · Builder · Curious Human
+            </p>
+            <p class="plaque-lede">
+              I build interactive experiences across AI, web, mobile, and
+              connected hardware where technology, design, and curiosity meet.
+            </p>
+            <div class="stack-block">
+              <p class="stack-label">Building with</p>
+              <ul class="interest-run" aria-label="Building with">
+                <li>React</li>
+                <li>React Native</li>
+                <li>TypeScript</li>
+                <li>Node.js</li>
+                <li>NestJS</li>
+                <li>Ruby on Rails</li>
+                <li>PostgreSQL</li>
+                <li>AI</li>
+              </ul>
+            </div>
+            <div class="stack-block">
+              <p class="stack-label">Currently Obsessed With</p>
+              <ul class="interest-run" aria-label="Currently Obsessed With">
+                <li>LLMs</li>
+                <li>AI Agents</li>
+                <li>MCP</li>
+                <li>RAG</li>
+                <li>Robotics</li>
+                <li>Voice AI</li>
+                <li>Computer Vision</li>
+                <li>Creative Coding</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section
+          class="page"
+          id="page-2"
+          data-chapter="2"
+          aria-label="Playground"
+          hidden
+        >
+          <div class="plaque plaque--story">
+            <p class="plaque-num">02 playground</p>
+            <h2 class="display display--sm">Hi, I’m Rabab.</h2>
+            <div class="story">
+              <p>
+                I genuinely enjoy making things that didn’t exist yesterday.
+              </p>
+              <p>Most of my side projects start with one simple question:</p>
+              <p>“What if this existed?”</p>
+              <p>
+                Sometimes that becomes an AI tool. Sometimes a mobile app.
+                Sometimes it’s just a fun experiment that teaches me something
+                new.
+              </p>
+              <p>
+                When I’m not building, you’ll probably find me painting, trying
+                a new restaurant, gaming, or chasing the next idea that refuses
+                to leave my head.
+              </p>
+            </div>
+            <ul class="interest-run" aria-label="Loop">
+              <li>Build</li>
+              <li>Learn</li>
+              <li>Explore</li>
+              <li>Create</li>
+              <li>Improve</li>
+              <li>Repeat</li>
+            </ul>
+          </div>
+        </section>
+
+        <section
+          class="page"
+          id="page-3"
+          data-chapter="3"
+          aria-label="Experiments"
+          hidden
+        >
+          <div class="plaque plaque--experiments">
+            <p class="plaque-num">03 experiments</p>
+            <ul class="experiment-list" aria-label="Experiments">
+              <li class="experiment">
+                <div class="experiment-meta">
+                  <h3 class="experiment-name">Digital Memory Jar</h3>
+                  <p class="experiment-status">Growing…</p>
+                </div>
+                <a
+                  class="experiment-enter"
+                  href="https://v0-memory-jar.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Enter</a
+                >
+              </li>
+              <li class="experiment">
+                <div class="experiment-meta">
+                  <h3 class="experiment-name">Living AI Garden</h3>
+                  <p class="experiment-status">Blooming…</p>
+                </div>
+                <a
+                  class="experiment-enter"
+                  href="https://living-ai-garden.r-rababzahra888.workers.dev/garden"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Enter</a
+                >
+              </li>
+              <li class="experiment">
+                <div class="experiment-meta">
+                  <h3 class="experiment-name">Stellar Navigator</h3>
+                  <p class="experiment-status">Orbiting…</p>
+                </div>
+                <a
+                  class="experiment-enter"
+                  href="https://www.rababzahra.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Enter</a
+                >
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section
+          class="page"
+          id="page-4"
+          data-chapter="4"
+          aria-label="Garden"
+          hidden
+        >
+          <div class="plaque plaque--garden">
+            <p class="plaque-num">04 garden</p>
+            <h2 class="display display--sm">Things I’m Building</h2>
+            <p class="plaque-lede">
+              A few projects keeping me curious these days.
+            </p>
+            <ul class="grow-list" aria-label="Projects in progress">
+              <li class="grow-item">
+                <span class="grow-mark" aria-hidden="true">🌱</span>
+                <div class="grow-body">
+                  <h3 class="grow-name">Stepli</h3>
+                  <p class="grow-tag">
+                    A patient guide for everyday technology.
+                  </p>
+                  <p class="grow-note">
+                    Inspired by my mom, Stepli overlays any Android app and
+                    walks people through everyday tasks one step at a time in
+                    simple, human language.
+                  </p>
+                </div>
+              </li>
+              <li class="grow-item">
+                <span class="grow-mark" aria-hidden="true">📍</span>
+                <div class="grow-body">
+                  <h3 class="grow-name">Tracklio</h3>
+                  <p class="grow-tag">A better way to navigate the job hunt.</p>
+                  <p class="grow-note">
+                    An idea I’m exploring to make applying, tracking
+                    opportunities, and staying organized feel a little less
+                    chaotic. Still evolving.
+                  </p>
+                </div>
+              </li>
+              <li class="grow-item">
+                <span class="grow-mark" aria-hidden="true">🌌</span>
+                <div class="grow-body">
+                  <h3 class="grow-name">Atlas</h3>
+                  <p class="grow-tag">Every resource. One search.</p>
+                  <p class="grow-note">
+                    Search once. Atlas brings together the best learning
+                    resources from across the web, all in one place.
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section
+          class="page"
+          id="page-5"
+          data-chapter="5"
+          aria-label="Connect"
+          hidden
+        >
+          <div class="plaque plaque--connect">
+            <p class="plaque-num">05 connect</p>
+            <h2 class="display display--sm">Have a weird idea?</h2>
+            <p class="plaque-lede">Perfect. Those are my favorite kind.</p>
+            <a class="connect-cta" href="mailto:r.rababzahra888@gmail.com"
+              >Let’s build
+              <span class="cta-arrow" aria-hidden="true">→</span></a
+            >
+            <nav class="name-links name-links--quiet" aria-label="Elsewhere">
+              <a
+                href="https://github.com/rababzahra8"
+                target="_blank"
+                rel="noopener noreferrer"
+                >GitHub</a
+              >
+              <a
+                href="https://www.linkedin.com/in/rabab-zahra-880090216/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >LinkedIn</a
+              >
+            </nav>
+          </div>
+        </section>
+      </main>
+
+      <footer class="page-footer">
+        <div class="footer-actions">
+          <button
+            type="button"
+            class="btn btn-tiny"
+            id="btn-music"
+            aria-pressed="true"
+            aria-label="Toggle background music"
+          >
+            Music: on
+          </button>
         </div>
-      </section>
+      </footer>
+    </div>
 
-      <section class="page" id="page-2" data-chapter="2" aria-label="About" hidden>
-        <div class="plaque">
-          <p class="plaque-num">02</p>
-          <h2 class="display display--sm">Lahore</h2>
-          <ul class="name-run" aria-label="Stack">
-            <li>React</li>
-            <li>React Native</li>
-            <li>NestJS</li>
-            <li>Rails</li>
-            <li>TypeScript</li>
-          </ul>
-        </div>
-      </section>
-
-      <section class="page" id="page-3" data-chapter="3" aria-label="Work" hidden>
-        <div class="plaque">
-          <p class="plaque-num">03 · work</p>
-          <nav class="name-links name-links--work" aria-label="Projects">
-            <a href="https://v0-memory-jar.vercel.app/" target="_blank" rel="noopener noreferrer">Digital Memory Jar</a>
-            <a href="https://living-ai-garden.r-rababzahra888.workers.dev/garden" target="_blank" rel="noopener noreferrer">Living AI Garden</a>
-            <a href="https://www.rababzahra.com" target="_blank" rel="noopener noreferrer">Stellar Navigator</a>
-          </nav>
-        </div>
-      </section>
-
-      <section class="page" id="page-4" data-chapter="4" aria-label="Field" hidden>
-        <div class="plaque">
-          <p class="plaque-num">04 · field</p>
-          <h2 class="display display--sm">Field</h2>
-          <p class="plaque-role">BSCS · FAST-NUCES</p>
-          <ul class="name-run" aria-label="Notes">
-            <li>4+ years</li>
-            <li>10+ shipped</li>
-            <li>Remote</li>
-            <li>AI + BLE</li>
-          </ul>
-        </div>
-      </section>
-
-      <section class="page" id="page-5" data-chapter="5" aria-label="Path" hidden>
-        <div class="plaque plaque--path">
-          <p class="plaque-num">05 · path</p>
-          <ol class="company-trail" aria-label="Company experience">
-            <li class="company-row">
-              <span class="name-yr">2024</span>
-              <div class="company-body">
-                <span class="name-title">ByteMage</span>
-                <span class="company-role">Full Stack Engineer</span>
-                <span class="company-detail">React · RN · NestJS · BLE · AI microservices</span>
-              </div>
-            </li>
-            <li class="company-row">
-              <span class="name-yr">2023</span>
-              <div class="company-body">
-                <span class="name-title">Devsinc</span>
-                <span class="company-role">Software Engineer</span>
-                <span class="company-detail">Rails modernization · production migrations</span>
-              </div>
-            </li>
-            <li class="company-row">
-              <span class="name-yr">2022</span>
-              <div class="company-body">
-                <span class="name-title">Devsinc</span>
-                <span class="company-role">Associate Software Engineer</span>
-                <span class="company-detail">Web apps · REST APIs · distributed Agile</span>
-              </div>
-            </li>
-          </ol>
-        </div>
-      </section>
-
-      <section class="page" id="page-6" data-chapter="6" aria-label="Contact" hidden>
-        <div class="plaque">
-          <p class="plaque-num">06</p>
-          <h2 class="display display--sm">Contact</h2>
-          <nav class="name-links" aria-label="Contact">
-            <a href="mailto:r.rababzahra888@gmail.com">Email</a>
-            <a href="https://github.com/rababzahra8" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a href="https://www.linkedin.com/in/rabab-zahra-880090216/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-          </nav>
-        </div>
-      </section>
-    </main>
-
-    <footer class="page-footer">
-      <div class="footer-actions">
-        <button type="button" class="btn btn-tiny" id="btn-sound" aria-pressed="true">Sound: on</button>
-      </div>
-    </footer>
-  </div>
-
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
-    }
-  }
-  </script>
-  <script type="module" src="main.js?v=37"></script>
-</body>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three.module.js",
+          "gsap": "./vendor/gsap.js"
+        }
+      }
+    </script>
+    <script type="module" src="main.js"></script>
+  </body>
 </html>

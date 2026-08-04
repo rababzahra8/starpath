@@ -1,21 +1,27 @@
 import * as THREE from "three";
+import {
+  initMotion,
+  revealChapter,
+  moveNavPill,
+  wallParallax,
+  setMotionSoundEnabled,
+  reduceMotion
+} from "./motion.js";
 
-const CHAPTER_COUNT = 6;
+const CHAPTER_COUNT = 5;
 const IMAGE_BY_CHAPTER = {
-  1: "./assets/starry.jpg?v=16",
-  2: "./assets/about-cat.jpg?v=19",
-  3: "./assets/projects-fire.jpg",
-  4: "./assets/field-cosmos.jpg?v=18",
-  5: "./assets/sunflower-night.jpg?v=17",
-  6: "./assets/solar-flare.jpg"
+  1: "./assets/starry.jpg",
+  2: "./assets/about-cat.jpg",
+  3: "./assets/field-cosmos.jpg",
+  4: "./assets/sunflower-night.jpg",
+  5: "./assets/projects-fire.jpg"
 };
 const IMAGE_SAMPLE = {
   1: { mode: "stretch" },
   2: { mode: "stretch" },
   3: { mode: "stretch" },
   4: { mode: "stretch" },
-  5: { mode: "stretch" },
-  6: { mode: "stretch" }
+  5: { mode: "stretch" }
 };
 const COLS = 140;
 const ROWS = 96;
@@ -31,11 +37,14 @@ const WIPE_PRESS = 7;
 const IMAGE_BLEND = 0.35;
 const JOURNEY_MAX = CHAPTER_COUNT - 1;
 const JOURNEY_SCROLL = 0.00105;
+const JOURNEY_SMOOTH = reduceMotion ? 0.2 : 0.055; // Lenis-like wheel settle into journey
+
+let scrollResidual = 0;
 
 const canvasEl = document.getElementById("pixel-stage");
 const paintHint = document.getElementById("paint-hint");
 
-let currentChapter = 1;
+let currentChapter = 0;
 let journey = 0;              // 0 = chapter1 · N-1 = last chapter fully revealed
 let journeyTarget = 0;
 let scrollSoundDebt = 0;
@@ -49,17 +58,23 @@ const KEY_SPEED = 0.16;
 let lastClickCell = -1;
 let lastClickTime = 0;
 let audioCtx = null;
-let soundEnabled = true;
+let musicEnabled = true;
 let soundUnlocked = false;
 let masterBus = null;
+let musicEl = null;
+let musicGain = null;
+let musicConnected = false;
+
+const MUSIC_SRC = "./assets/ambient.mp3";
+/** Quiet under key clicks — keys stay on always */
+const MUSIC_LEVEL = 0.12;
 
 const HINTS = {
-  1: "Scroll — rows wipe into About",
-  2: "Keep scrolling — Work",
-  3: "Keep scrolling — Field",
-  4: "Keep scrolling — Path",
-  5: "Keep scrolling — Contact",
-  6: "End of the path · scroll up to wipe back"
+  1: "Scroll — paint into Playground",
+  2: "Keep scrolling — Experiments",
+  3: "Keep scrolling — Garden",
+  4: "Keep scrolling — Connect",
+  5: "End of the path · scroll up to wipe back"
 };
 
 function ensureAudio() {
@@ -76,76 +91,129 @@ function ensureAudio() {
     masterBus.connect(filter);
     filter.connect(audioCtx.destination);
   }
-  if (audioCtx.state === "suspended") {
-    audioCtx.resume().catch(() => {});
-  }
   return audioCtx;
 }
 
+/** Looping bed — toggled separately from key clicks */
+function ensureMusic() {
+  const ctx = ensureAudio();
+  if (!ctx || musicConnected) return musicEl;
+  musicEl = new Audio(MUSIC_SRC);
+  musicEl.loop = true;
+  musicEl.preload = "auto";
+  musicEl.playsInline = true;
+  try {
+    const src = ctx.createMediaElementSource(musicEl);
+    musicGain = ctx.createGain();
+    musicGain.gain.value = 0.0001;
+    src.connect(musicGain);
+    musicGain.connect(ctx.destination);
+    musicConnected = true;
+  } catch {
+    musicEl.volume = 0;
+  }
+  return musicEl;
+}
+
+function setMusicPlaying(on) {
+  const ctx = ensureAudio();
+  const el = ensureMusic();
+  if (!el || !ctx) return;
+
+  const want = on && musicEnabled;
+  if (want) {
+    el.play().catch(() => {});
+    if (musicGain) {
+      const t = ctx.currentTime;
+      musicGain.gain.cancelScheduledValues(t);
+      musicGain.gain.setValueAtTime(Math.max(0.0001, musicGain.gain.value), t);
+      musicGain.gain.linearRampToValueAtTime(MUSIC_LEVEL, t + 1.6);
+    } else {
+      el.volume = MUSIC_LEVEL;
+    }
+  } else if (musicGain) {
+    const t = ctx.currentTime;
+    musicGain.gain.cancelScheduledValues(t);
+    musicGain.gain.setValueAtTime(Math.max(0.0001, musicGain.gain.value), t);
+    musicGain.gain.linearRampToValueAtTime(0.0001, t + 0.45);
+    window.setTimeout(() => {
+      if (!musicEnabled || musicGain?.gain.value < 0.001) el.pause();
+    }, 500);
+  } else {
+    el.volume = 0;
+    el.pause();
+  }
+}
+
 /**
- * Browsers (esp. Safari) need resume + a real start() inside a user gesture.
- * Wheel/scroll alone will not unlock audio.
+ * Must run inside a real user gesture (pointerdown / keydown / click).
+ * Resumes AudioContext so key BufferSources can play — Music button not required.
  */
 function unlockAudioFromGesture() {
   const ctx = ensureAudio();
   if (!ctx || !masterBus) return;
-  try {
-    const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    const g = ctx.createGain();
-    g.gain.value = 0.00001;
-    src.connect(g);
-    g.connect(masterBus);
-    src.start(0);
+
+  const arm = () => {
+    if (ctx.state !== "running") return;
+    try {
+      const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const g = ctx.createGain();
+      g.gain.value = 0.00001;
+      src.connect(g);
+      g.connect(masterBus);
+      src.start(0);
+    } catch {
+      /* ignore */
+    }
+    const first = !soundUnlocked;
     soundUnlocked = true;
-  } catch {
-    /* ignore */
+    // Start bed only after keys are armed (and only when music is on)
+    if (first && musicEnabled) setMusicPlaying(true);
+  };
+
+  if (ctx.state === "suspended") {
+    // resume() must be invoked in this gesture call stack
+    ctx.resume().then(arm).catch(() => {});
+  } else {
+    arm();
   }
 }
 
 /**
- * Soft laptop-style key: short filtered noise only — no harsh buzz.
+ * Soft laptop-style key — always on once AudioContext is running.
+ * Does not create/resume context on hover (that isn't a gesture).
  */
-function playKeyClick(intensity = 1, pitch = 0.5, retried = false) {
-  if (!soundEnabled) return;
-  const ctx = ensureAudio();
-  if (!ctx || !masterBus) return;
-  if (ctx.state !== "running") {
-    if (!retried) {
-      ctx.resume()
-        .then(() => playKeyClick(intensity, pitch, true))
-        .catch(() => {});
-    }
-    return;
-  }
+function playKeyClick(intensity = 1, pitch = 0.5) {
+  if (!audioCtx || !masterBus || audioCtx.state !== "running") return;
 
-  const t0 = ctx.currentTime;
-  const vol = 0.045 * Math.min(1, intensity);
+  const t0 = audioCtx.currentTime;
+  const vol = 0.075 * Math.min(1, intensity);
   const p = 0.85 + pitch * 0.35;
 
   const dur = 0.018 + Math.random() * 0.01;
-  const frames = Math.max(1, Math.floor(ctx.sampleRate * dur));
-  const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+  const frames = Math.max(1, Math.floor(audioCtx.sampleRate * dur));
+  const buffer = audioCtx.createBuffer(1, frames, audioCtx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < frames; i++) {
     const env = Math.pow(1 - i / frames, 3.2);
     data[i] = (Math.random() * 2 - 1) * env;
   }
 
-  const src = ctx.createBufferSource();
+  const src = audioCtx.createBufferSource();
   src.buffer = buffer;
 
-  const bp = ctx.createBiquadFilter();
+  const bp = audioCtx.createBiquadFilter();
   bp.type = "bandpass";
   bp.frequency.value = 1800 * p + Math.random() * 200;
   bp.Q.value = 1.1;
 
-  const hp = ctx.createBiquadFilter();
+  const hp = audioCtx.createBiquadFilter();
   hp.type = "highpass";
   hp.frequency.value = 600;
 
-  const gain = ctx.createGain();
+  const gain = audioCtx.createGain();
   gain.gain.setValueAtTime(vol, t0);
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
 
@@ -539,6 +607,8 @@ function applyChapterUI(n) {
 
   if (paintHint) paintHint.textContent = HINTS[n];
   measureProgress();
+  moveNavPill();
+  revealChapter(n);
 }
 
 function goToChapter(n) {
@@ -548,19 +618,29 @@ function goToChapter(n) {
 }
 
 /**
- * Scroll drives continuous wipes: rows flip top→bottom into each next image.
+ * Scroll drives continuous wipes. Wheel is eased (Lenis-like) into journey.
  */
 function handleScroll(deltaY) {
-  journeyTarget = Math.max(0, Math.min(JOURNEY_MAX, journeyTarget + deltaY * JOURNEY_SCROLL));
+  scrollResidual += deltaY;
+}
 
-  scrollSoundDebt += Math.abs(deltaY);
+function flushScrollResidual() {
+  if (Math.abs(scrollResidual) < 0.15) {
+    scrollResidual = 0;
+    return;
+  }
+  const step = scrollResidual * (reduceMotion ? 0.35 : 0.14);
+  scrollResidual -= step;
+  journeyTarget = Math.max(0, Math.min(JOURNEY_MAX, journeyTarget + step * JOURNEY_SCROLL));
+
+  scrollSoundDebt += Math.abs(step);
   const now = performance.now();
   if (scrollSoundDebt > 36 && now - lastScrollSound > 48) {
     scrollSoundDebt = 0;
     lastScrollSound = now;
     const { frontier } = wipeState(journeyTarget);
     const pitch = Math.max(0, Math.min(1, frontier / ROWS));
-    playKeyClick(0.45 + Math.min(0.3, Math.abs(deltaY) / 140), pitch);
+    playKeyClick(0.45 + Math.min(0.3, Math.abs(step) / 140), pitch);
   }
 }
 
@@ -590,37 +670,29 @@ function bindUI() {
   }, { passive: true });
 
   window.addEventListener("pointermove", setPointerFromEvent, { passive: true });
+  // Any press/click/key unlocks Web Audio so key clicks work without Music toggle
+  const unlock = () => unlockAudioFromGesture();
   window.addEventListener("pointerdown", (e) => {
-    unlockAudioFromGesture();
+    unlock();
     setPointerFromEvent(e);
   }, { passive: true });
-  window.addEventListener("touchstart", () => {
-    unlockAudioFromGesture();
-  }, { passive: true });
+  window.addEventListener("touchstart", unlock, { passive: true });
+  window.addEventListener("click", unlock, { passive: true });
   window.addEventListener("resize", resize);
 
-  document.getElementById("btn-sound")?.addEventListener("click", () => {
-    const wasLocked = !soundUnlocked || !audioCtx || audioCtx.state !== "running";
+  document.getElementById("btn-music")?.addEventListener("click", () => {
     unlockAudioFromGesture();
-    // First click only unlocks if audio was still locked (avoids off→on ritual).
-    if (wasLocked) {
-      soundEnabled = true;
-      const btn = document.getElementById("btn-sound");
-      if (btn) {
-        btn.textContent = "Sound: on";
-        btn.setAttribute("aria-pressed", "true");
-      }
-      playKeyClick();
-      return;
-    }
-    soundEnabled = !soundEnabled;
-    const btn = document.getElementById("btn-sound");
-    if (btn) {
-      btn.textContent = soundEnabled ? "Sound: on" : "Sound: off";
-      btn.setAttribute("aria-pressed", soundEnabled ? "true" : "false");
-    }
-    if (soundEnabled) playKeyClick();
+    musicEnabled = !musicEnabled;
+    setMusicPlaying(musicEnabled);
+    syncMusicButton();
   });
+
+  function syncMusicButton() {
+    const btn = document.getElementById("btn-music");
+    if (!btn) return;
+    btn.textContent = musicEnabled ? "Music: on" : "Music: off";
+    btn.setAttribute("aria-pressed", musicEnabled ? "true" : "false");
+  }
 
   window.addEventListener("keydown", (e) => {
     unlockAudioFromGesture();
@@ -658,9 +730,10 @@ function updateKeyboardFocus() {
 function animate() {
   requestAnimationFrame(animate);
   updateKeyboardFocus();
+  flushScrollResidual();
 
-  // Ease the wipe frontier down the wall
-  journey += (journeyTarget - journey) * 0.085;
+  // Ease the wipe frontier down the wall (Lenis-like settle into journey)
+  journey += (journeyTarget - journey) * JOURNEY_SMOOTH;
   if (Math.abs(journeyTarget - journey) < 0.0005) journey = journeyTarget;
 
   const scrolling = Math.abs(journeyTarget - journey) > 0.002;
@@ -689,7 +762,12 @@ function animate() {
   const wakeRadius = PRESS_RADIUS + focus.speed * 1.8;
   const wakeRadiusSq = wakeRadius * wakeRadius;
 
-  group.position.set(0, 0, 0);
+  // Tiny parallax of the whole wall toward the pointer
+  const nx = (focus.x / (gridWidth * 0.5)) || 0;
+  const ny = (focus.y / (gridHeight * 0.5)) || 0;
+  wallParallax(group, Math.max(-1, Math.min(1, nx)), Math.max(-1, Math.min(1, ny)), reduceMotion);
+  if (reduceMotion) group.position.set(0, 0, 0);
+  else group.position.set(nx * 0.08, ny * 0.06, 0);
 
   for (const cell of cells) {
     // Single wipe band presses keys as each row flips to the next image
@@ -746,7 +824,10 @@ function animate() {
     cell.fullColor.lerp(tmpColor, IMAGE_BLEND);
     tmpColor.copy(cell.fullColor);
     if (cell.z > 0.03) {
-      tmpColor.lerp(pressTint, Math.min(1, cell.z / KEY_TRAVEL) * 0.18);
+      // Soft brighten + warm press near cursor (1–3px depth already via z)
+      const lift = Math.min(1, cell.z / KEY_TRAVEL);
+      tmpColor.offsetHSL(0, 0.02 * lift, 0.06 * lift);
+      tmpColor.lerp(pressTint, lift * 0.14);
     }
     mesh.setColorAt(cell.i, tmpColor);
   }
@@ -759,29 +840,66 @@ function animate() {
 
 async function loadImage(src) {
   const img = new Image();
+  img.decoding = "async";
   img.src = src;
-  await img.decode();
+  if (typeof img.decode === "function") {
+    try {
+      await img.decode();
+      return img;
+    } catch {
+      /* fall through to onload path */
+    }
+  }
+  await new Promise((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error(`Could not load ${src}`));
+    if (img.complete && img.naturalWidth) resolve();
+  });
   return img;
 }
 
 async function boot() {
   bindUI();
-  const imgs = await Promise.all(
-    Array.from({ length: CHAPTER_COUNT }, (_, i) => loadImage(IMAGE_BY_CHAPTER[i + 1]))
-  );
+
+  let imgs;
+  try {
+    imgs = await Promise.all(
+      Array.from({ length: CHAPTER_COUNT }, (_, i) => loadImage(IMAGE_BY_CHAPTER[i + 1]))
+    );
+  } catch (err) {
+    console.error(err);
+    if (paintHint) paintHint.textContent = "Could not load the night sky.";
+    return;
+  }
+
+  if (paintHint) paintHint.textContent = HINTS[1];
+
   const pixelsByChapter = {};
   imgs.forEach((img, i) => {
     pixelsByChapter[i + 1] = sampleImage(img, IMAGE_SAMPLE[i + 1]);
   });
   buildCells(pixelsByChapter);
   resize();
-  goToChapter(1);
+  requestAnimationFrame(animate);
+
+  try {
+    initMotion({ playClick: playKeyClick });
+    setMotionSoundEnabled(true); // whoosh always on; Music button never mutes keys
+  } catch (err) {
+    console.warn("Motion polish skipped:", err);
+  }
+
+  try {
+    goToChapter(1);
+  } catch (err) {
+    console.warn("Chapter UI:", err);
+    if (paintHint) paintHint.textContent = HINTS[1];
+  }
+
   focus.x = 0;
   focus.y = -gridHeight * 0.15;
-  requestAnimationFrame(animate);
 }
 
 boot().catch((err) => {
   console.error(err);
-  if (paintHint) paintHint.textContent = "Could not load the night sky.";
 });
