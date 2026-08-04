@@ -1,27 +1,60 @@
-# 3D pixel wallpaper widget
+# Starpath
+
+Personal portfolio for **Rabab Zahra** — a keyed wall of paintings you scroll through. Each chapter paints colors into a huge Three.js `InstancedMesh` of keys; hover presses them, scroll wipes row by row into the next image.
+
+> *To be a star, you must burn.*
+
+![Starpath moodboard — from Pinterest spark to first live page](./assets/starpath-moodboard-collage.png)
+
+**From Pinterest spark → first live page:** pixel wall · push-pin interaction · scroll ripple · Van Gogh palette.
 
 ## Stack
 
-- **Plain HTML/CSS + Three.js** (loaded from a CDN as an ES module, no bundler, no npm install, no build step).
-- This is the right stack for "real 3D, drop into any website": Three.js is the standard WebGL library for 3D on the web, and since you didn't mention React/Vue, plain JS means you can paste these three files into *any* site (WordPress, Webflow, a static site, a React app via an `<iframe>` or a `useEffect` that mounts it, anything) without touching a build pipeline.
-- If your site *is* already React, say so and I'll wrap `main.js` into a component using `@react-three/fiber` instead — same rendering approach, different plumbing.
+| Layer | Choice |
+| --- | --- |
+| Markup / styles | Plain HTML + CSS (no framework) |
+| 3D wall | [Three.js](https://threejs.org/) (`InstancedMesh`, vendored under `vendor/`) |
+| Motion | [GSAP](https://gsap.com/) (chapter reveals, nav pill — vendored) |
+| Audio | Web Audio / HTMLAudio for ambient track + key clicks |
+| Build | **None** — static files, ES modules via import map |
 
-## How it works
+No npm install. No bundler. Open with a local static server (browsers block ES modules from `file://`).
 
-- The scene is one `THREE.InstancedMesh` of ~2,700 small boxes (voxels), one per grid cell. Instancing means it's a single draw call, so it stays smooth even on phones.
-- Each voxel has a target color and height computed once (sun = warm gradient + tall, mountains = two gray ridges via layered sine waves, sky = cream-to-peach gradient).
-- Unpainted cells sit low and dim; painting a cell (via raycasting against an invisible plane) animates its height and color up to full over a few frames — that's the "reveal" effect.
-- Moving the mouse without clicking tilts the whole group slightly (parallax). Leave it idle for a second and it auto-rotates slowly. Both use damped lerp so it feels smooth, not snappy.
-- The quote is a plain HTML `<div>` overlaid on the canvas (crisp text, no font-loading step). On **Save PNG**, the code renders the 3D frame to a canvas and draws the quote text on top with Canvas2D before exporting, so the downloaded PNG matches what's on screen.
+## How to run
+
+From the project root:
+
+```bash
+python3 -m http.server 8765
+```
+
+Then open [http://localhost:8765](http://localhost:8765).
+
+Any static server works (`npx serve`, VS Code Live Server, etc.). Point it at this folder.
+
+### Controls
+
+- **Scroll** — wipe between chapters (Origin → Playground → Experiments → Garden → Moodboard → Connect)
+- **Hover / click keys** — press the wall (clicks always on; music is separate)
+- **Music: on/off** — footer toggle for the ambient track only
+- **Nav** — jump to a chapter
 
 ## Files
 
-- `index.html` — markup + the import map that points `"three"` at the CDN build
-- `style.css` — all styling, plain CSS custom properties, no framework
-- `main.js` — the Three.js scene, grid generation, painting, camera parallax, export
+| File | Role |
+| --- | --- |
+| `index.html` | Chapters, plaques, import map |
+| `style.css` | Layout, plaques, mood trail, cursor |
+| `main.js` | Three.js wall, journey scroll, image sampling, audio |
+| `motion.js` | GSAP reveals, nav pill, micro-interactions |
+| `vendor/` | Local `three.module.js` + `gsap.js` |
+| `assets/` | Chapter paintings, moodboard stills, ambient audio |
 
-## Embedding in your site
+## Chapters
 
-Simplest: copy the `<div id="pixel-wallpaper">...</div>` block from `index.html` into your page, include `style.css`, and include `main.js` as a `type="module"` script with the import map above it. Everything is scoped under `.pw-` class names and one `#pixel-wallpaper` id, so it won't collide with the rest of your CSS.
-
-To change the scene (different colors, a city skyline instead of mountains, more/fewer columns for performance), edit the `cellData()` function and the `COLS`/`ROWS`/`CELL` constants at the top of `main.js`.
+1. **Origin** — who I am  
+2. **Playground** — how I build  
+3. **Experiments** — live links  
+4. **Garden** — products  
+5. **Moodboard** — how the pixels started  
+6. **Connect** — say hi  
