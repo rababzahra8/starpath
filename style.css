@@ -1477,22 +1477,6 @@ html.has-custom-cursor * {
   box-shadow: 0 0 0 1px rgba(7, 13, 26, 0.45);
 }
 
-.sp-cursor-trail {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 99;
-  width: 8px;
-  height: 8px;
-  margin: -4px 0 0 -4px;
-  border-radius: 0;
-  background: #ffe566;
-  pointer-events: none;
-  will-change: transform, opacity;
-  image-rendering: pixelated;
-  box-shadow: 0 0 0 1px rgba(7, 13, 26, 0.35);
-}
-
 .experiment-list.is-dimming .experiment:not(.is-hot) {
   opacity: 0.45;
   filter: blur(0.6px);
@@ -1584,7 +1568,6 @@ html.has-custom-cursor * {
 
 @media (prefers-reduced-motion: reduce) {
   .sp-cursor,
-  .sp-cursor-trail,
   .chapters-pill,
   .orbit-traveler,
   .garden-dust {

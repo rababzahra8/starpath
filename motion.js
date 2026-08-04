@@ -51,11 +51,6 @@ export function playWhoosh() {
 
 /* —— Custom mosaic cursor —— */
 let cursorEl;
-let trail = [];
-let cx = 0;
-let cy = 0;
-let tx = 0;
-let ty = 0;
 let cursorMode = "dot";
 
 function ensureCursor() {
@@ -69,19 +64,11 @@ function ensureCursor() {
   cursorEl.innerHTML = `<span class="sp-cursor-core"></span>`;
   document.body.appendChild(cursorEl);
 
-  for (let i = 0; i < 8; i++) {
-    const p = document.createElement("span");
-    p.className = "sp-cursor-trail";
-    document.body.appendChild(p);
-    trail.push({ el: p, x: 0, y: 0 });
-  }
-
   window.addEventListener(
     "pointermove",
     (e) => {
-      tx = e.clientX;
-      ty = e.clientY;
       cursorEl.classList.add("is-on");
+      cursorEl.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
     },
     { passive: true }
   );
@@ -117,28 +104,6 @@ function ensureCursor() {
     },
     { passive: true }
   );
-
-  // Tip snaps to the pointer; trail pixels each ease toward tip (not a broken chain)
-  const tick = () => {
-    cx = tx;
-    cy = ty;
-    if (cursorEl) {
-      cursorEl.style.transform = `translate3d(${Math.round(cx)}px, ${Math.round(cy)}px, 0)`;
-    }
-    const n = trail.length;
-    for (let i = 0; i < n; i++) {
-      const t = trail[i];
-      const ease = 0.42 - i * 0.04;
-      t.x += (cx - t.x) * ease;
-      t.y += (cy - t.y) * ease;
-      const scale = 1 - (i + 1) * 0.09;
-      const alpha = Math.max(0, 0.7 * (1 - (i + 1) / (n + 1)));
-      t.el.style.transform = `translate3d(${Math.round(t.x)}px, ${Math.round(t.y)}px, 0) scale(${scale})`;
-      t.el.style.opacity = String(alpha);
-    }
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
 }
 
 function setCursorMode(mode) {
