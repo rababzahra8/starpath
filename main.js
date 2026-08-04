@@ -14,7 +14,7 @@ const IMAGE_BY_CHAPTER = {
   2: "./assets/about-cat.jpg",
   3: "./assets/field-cosmos.jpg",
   4: "./assets/sunflower-night.jpg",
-  5: "./assets/mood-spark.png",
+  5: "./assets/mood-spark-wall.png",
   6: "./assets/projects-fire.jpg"
 };
 const IMAGE_SAMPLE = {
