@@ -25,10 +25,11 @@ const IMAGE_BY_CHAPTER = {
  * wipe, the key presses and the cursor wake all keep working unchanged.
  */
 const VIDEO_BY_CHAPTER = {
+  1: ["./assets/starry-flow.webm", "./assets/starry-flow.mp4"],
   4: ["./assets/typing-hands.webm", "./assets/typing-hands.mp4"],
   5: ["./assets/motion-stars.webm", "./assets/motion-stars.mp4"]
 };
-const LIVE_FPS = 15;
+const LIVE_FPS = 20;
 const liveWalls = new Map();
 const IMAGE_SAMPLE = {
   1: { mode: "stretch" },
@@ -50,7 +51,7 @@ const DAMPING = 0.78;
 const PRESS_RADIUS = 2.8;
 const WIPE_EDGE = 4.5;
 const WIPE_PRESS = 7;
-const IMAGE_BLEND = 0.35;
+const IMAGE_BLEND = 0.7; // higher = live walls read as motion, not mush
 const JOURNEY_MAX = CHAPTER_COUNT - 1;
 const JOURNEY_SCROLL = 0.00105;
 const JOURNEY_SMOOTH = reduceMotion ? 0.2 : 0.055; // Lenis-like wheel settle into journey

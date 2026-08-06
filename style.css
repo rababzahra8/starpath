@@ -14,6 +14,10 @@
   --font-body: "Sora", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Barely-there glass. Every panel on every chapter uses this, so nothing
+     ever reads as a black box sitting on the wall. */
+  --panel: rgba(7, 13, 26, 0.045);
+  --panel-blur: blur(2px);
 }
 
 *,
@@ -276,9 +280,9 @@ body {
   width: 100%;
   padding: clamp(18px, 3vw, 28px) clamp(18px, 3vw, 26px);
   border-radius: 2px;
-  background: rgba(7, 13, 26, 0.045);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: var(--panel);
+  backdrop-filter: var(--panel-blur);
+  -webkit-backdrop-filter: var(--panel-blur);
   box-shadow: none;
   animation: rise-in 0.9s var(--ease) both;
 }
@@ -352,9 +356,9 @@ body {
   padding: 10px 16px;
   border-radius: 999px;
   border: 1px solid rgba(255, 229, 140, 0.22);
-  background: rgba(7, 13, 26, 0.3);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: var(--panel);
+  backdrop-filter: var(--panel-blur);
+  -webkit-backdrop-filter: var(--panel-blur);
   font-family: var(--font-body);
   font-size: 12.5px;
   font-weight: 600;
@@ -447,7 +451,9 @@ body {
   gap: 4px;
   padding: 11px 13px 12px;
   border-radius: 2px;
-  background: rgba(7, 13, 26, 0.2);
+  background: var(--panel);
+  backdrop-filter: var(--panel-blur);
+  -webkit-backdrop-filter: var(--panel-blur);
   border: 1px solid rgba(255, 229, 140, 0.18);
   min-height: 100%;
 }
@@ -583,9 +589,9 @@ body {
   gap: 4px;
   padding: 10px 12px 11px;
   border-radius: 10px;
-  background: rgba(7, 13, 26, 0.3);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: var(--panel);
+  backdrop-filter: var(--panel-blur);
+  -webkit-backdrop-filter: var(--panel-blur);
   border: 1px dashed rgba(255, 229, 140, 0.32);
   transition:
     border-color 0.3s var(--ease),
@@ -597,7 +603,7 @@ body {
 .idea--medusa {
   border-style: solid;
   border-color: rgba(243, 141, 62, 0.42);
-  background: rgba(243, 141, 62, 0.07);
+  background: rgba(243, 141, 62, 0.05);
 }
 
 .idea--medusa:hover {
@@ -607,7 +613,7 @@ body {
 
 .idea:hover {
   border-color: rgba(255, 229, 102, 0.6);
-  background: rgba(255, 248, 230, 0.06);
+  background: rgba(255, 248, 230, 0.05);
   transform: translateY(-2px);
 }
 
@@ -633,26 +639,6 @@ body {
   text-shadow:
     0 1px 0 rgba(0, 0, 0, 0.85),
     0 3px 12px rgba(0, 0, 0, 0.8);
-}
-
-/*
- * Reusable scrim for bright or busy walls. A feathered radial pool of dark
- * behind the plaque, so type always has contrast without drawing a box.
- * Add plaque--scrim to any chapter whose wall washes the text out.
- */
-.plaque--scrim::before {
-  content: "";
-  position: absolute;
-  inset: -7% -5%;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(4, 8, 16, 0.86) 0%,
-    rgba(4, 8, 16, 0.78) 42%,
-    rgba(4, 8, 16, 0.46) 70%,
-    rgba(4, 8, 16, 0) 100%
-  );
 }
 
 /* 05 Ideas: same wide frame as Playground */
@@ -728,7 +714,7 @@ body {
   overflow: hidden;
   border-radius: 2px;
   border: 1px solid rgba(255, 229, 140, 0.22);
-  background: rgba(7, 13, 26, 0.35);
+  background: var(--panel);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
 }
 
@@ -863,9 +849,9 @@ body {
   margin: 0;
   min-height: 0;
   border-radius: 12px;
-  background: rgba(7, 13, 26, 0.16);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  background: var(--panel);
+  backdrop-filter: var(--panel-blur);
+  -webkit-backdrop-filter: var(--panel-blur);
   border: 1px solid rgba(255, 229, 140, 0.16);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
   transition:
@@ -877,7 +863,7 @@ body {
 }
 
 .experiment.is-hot {
-  background: rgba(255, 248, 230, 0.07);
+  background: rgba(255, 248, 230, 0.05);
   border-color: rgba(255, 229, 140, 0.42);
   transform: translateY(-2px);
 }
@@ -942,7 +928,7 @@ body {
   padding: 3px 8px;
   border-radius: 999px;
   border: 1px solid rgba(255, 229, 140, 0.2);
-  background: rgba(7, 13, 26, 0.28);
+  background: var(--panel);
   color: rgba(255, 236, 200, 0.78);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
 }
@@ -1460,7 +1446,7 @@ body {
 }
 
 .btn-tiny {
-  background: rgba(7, 13, 26, 0.7);
+  background: var(--panel);
   border-color: rgba(255, 229, 140, 0.4);
   color: #fff1c2;
   padding: 8px 12px;
