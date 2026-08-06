@@ -82,9 +82,9 @@ const MUSIC_SRC = "./assets/ambient.mp3";
 const MUSIC_LEVEL = 0.12;
 
 const HINTS = {
-  1: "Scroll to paint into Playground",
+  1: "Scroll to paint into Backstory",
   2: "Keep scrolling for Experiments",
-  3: "Keep scrolling for Garden",
+  3: "Keep scrolling for Playground",
   4: "Keep scrolling for Moodboard",
   5: "Keep scrolling for Connect",
   6: "End of the path · scroll up to wipe back"
