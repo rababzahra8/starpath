@@ -168,7 +168,7 @@ export function revealChapter(n) {
 
     const heading = plaque.querySelector(".display, .display--sm");
     const lines = plaque.querySelectorAll(
-      ".story p, .plaque-lede, .orbit-trail > li, .experiment, .interest-run li, .grow-item, .mood-step"
+      ".story p, .plaque-lede, .orbit-trail > li, .experiment, .interest-run li, .grow-item, .idea, .mood-step"
     );
     const rest = plaque.querySelectorAll(".plaque-num, .connect-cta, .name-links, .experiment-enter");
     const killList = [plaque, ...rest];
@@ -202,7 +202,7 @@ export function revealChapter(n) {
 
     if (n === 4) runGardenAmbient(page);
     else stopGardenWind();
-    if (n === 6) bindConnectTilt(page);
+    if (n === 7) bindConnectTilt(page);
 
     moveNavPill();
   } catch (err) {

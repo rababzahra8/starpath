@@ -23,7 +23,7 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Sora:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css?v=15" />
+    <link rel="stylesheet" href="style.css?v=21" />
   </head>
   <body>
     <div id="app">
@@ -75,18 +75,27 @@
             type="button"
             class="chapter-dot is-unlocked"
             data-goto="5"
-            aria-label="Moodboard"
+            aria-label="Ideas"
           >
             <span class="chapter-num">05</span>
-            <span class="chapter-name">Moodboard</span>
+            <span class="chapter-name">Ideas</span>
           </button>
           <button
             type="button"
             class="chapter-dot is-unlocked"
             data-goto="6"
-            aria-label="Connect"
+            aria-label="Moodboard"
           >
             <span class="chapter-num">06</span>
+            <span class="chapter-name">Moodboard</span>
+          </button>
+          <button
+            type="button"
+            class="chapter-dot is-unlocked"
+            data-goto="7"
+            aria-label="Connect"
+          >
+            <span class="chapter-num">07</span>
             <span class="chapter-name">Connect</span>
           </button>
         </nav>
@@ -295,7 +304,7 @@
           aria-label="Playground"
           hidden
         >
-          <div class="plaque plaque--garden">
+          <div class="plaque plaque--garden plaque--scrim">
             <p class="plaque-num">04 playground</p>
             <h2 class="display display--sm">Things I’m Building</h2>
             <p class="plaque-lede">
@@ -340,45 +349,65 @@
                 </div>
               </li>
             </ul>
+          </div>
+        </section>
 
-            <p class="idea-label">
-              Ideas
-              <span class="idea-label-note">not built yet, but soon</span>
+
+        <section
+          class="page"
+          id="page-5"
+          data-chapter="5"
+          aria-label="Ideas"
+          hidden
+        >
+          <div class="plaque plaque--ideas plaque--scrim">
+            <p class="plaque-num">05 ideas</p>
+            <h2 class="display display--sm">Not Built Yet</h2>
+            <p class="plaque-lede">
+              Seven that refuse to leave my head.
             </p>
-            <ul class="idea-list" aria-label="Ideas in the queue">
+                        <p class="idea-group">One archive, four ways in</p>
+            <ul
+              class="idea-list idea-list--four"
+              aria-label="Ideas built on one personal archive"
+            >
               <li class="idea">
-                <h3 class="idea-name">Constellation</h3>
+                <h3 class="idea-name">Backtrace</h3>
                 <p class="idea-note">
-                  A portfolio that redraws itself as you ship. Commits brighten
-                  stars, projects add planets.
-                </p>
-              </li>
-              <li class="idea">
-                <h3 class="idea-name">Afterimage</h3>
-                <p class="idea-note">
-                  Rebuilds your day from GPS, photos and calendar, then lets you
-                  search it like a timeline.
-                </p>
-              </li>
-              <li class="idea">
-                <h3 class="idea-name">Mycelium</h3>
-                <p class="idea-note">
-                  Everything you have learned as a graph, not folders. Ask what
-                  you knew about React last year.
+                  You ask. Search your own life the way you search the web. When
+                  was I happiest.
                 </p>
               </li>
               <li class="idea">
                 <h3 class="idea-name">Second Sight</h3>
                 <p class="idea-note">
-                  Memory that runs forward. You solved this bug six months ago,
-                  and it says so before you start.
+                  It notices. You solved this bug six months ago, and it says so
+                  before you start again.
                 </p>
               </li>
               <li class="idea">
-                <h3 class="idea-name">Backtrace</h3>
+                <h3 class="idea-name">Afterimage</h3>
                 <p class="idea-note">
-                  Search your own life the way you search the web. When was I
-                  happiest. Who showed me React Native.
+                  It replays. Rebuilds a day from photos, places and calendar
+                  into something you can walk back through.
+                </p>
+              </li>
+              <li class="idea">
+                <h3 class="idea-name">Mycelium</h3>
+                <p class="idea-note">
+                  It connects. Everything you have learned as a graph instead of
+                  folders, wired to itself.
+                </p>
+              </li>
+            </ul>
+
+            <p class="idea-group">On their own</p>
+            <ul class="idea-list idea-list--three" aria-label="Standalone ideas">
+              <li class="idea">
+                <h3 class="idea-name">Constellation</h3>
+                <p class="idea-note">
+                  A portfolio that redraws itself as you ship. Commits brighten
+                  stars, projects add planets.
                 </p>
               </li>
               <li class="idea">
@@ -388,11 +417,11 @@
                   from a field you were not looking at.
                 </p>
               </li>
-              <li class="idea">
-                <h3 class="idea-name">Understudy</h3>
+              <li class="idea idea--medusa">
+                <h3 class="idea-name">Medusa</h3>
                 <p class="idea-note">
-                  Not a Jarvis, a second you. Trained on what you know, then
-                  hired when you are not in the room. Blame Suits.
+                  What stays warm after the fire goes out. Built from the same
+                  archive, so the people I love can still ask me things.
                 </p>
               </li>
             </ul>
@@ -401,13 +430,13 @@
 
         <section
           class="page"
-          id="page-5"
-          data-chapter="5"
+          id="page-6"
+          data-chapter="6"
           aria-label="Moodboard"
           hidden
         >
           <div class="plaque plaque--mood">
-            <p class="plaque-num">05 moodboard</p>
+            <p class="plaque-num">06 moodboard</p>
             <h2 class="display display--sm">How the pixels started</h2>
             <p class="plaque-lede">
               "What if every pixel was actually something you could touch?"
@@ -487,13 +516,13 @@
 
         <section
           class="page"
-          id="page-6"
-          data-chapter="6"
+          id="page-7"
+          data-chapter="7"
           aria-label="Connect"
           hidden
         >
           <div class="plaque plaque--connect">
-            <p class="plaque-num">06 connect</p>
+            <p class="plaque-num">07 connect</p>
             <h2 class="display display--sm">Have a weird idea?</h2>
             <p class="plaque-lede">Perfect. Those are my favorite kind.</p>
             <a class="connect-cta" href="mailto:r.rababzahra888@gmail.com"
@@ -516,6 +545,7 @@
             </nav>
           </div>
         </section>
+
       </main>
 
       <footer class="page-footer">

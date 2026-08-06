@@ -8,22 +8,36 @@ import {
   reduceMotion
 } from "./motion.js";
 
-const CHAPTER_COUNT = 6;
+const CHAPTER_COUNT = 7;
 const IMAGE_BY_CHAPTER = {
   1: "./assets/starry.jpg",
   2: "./assets/about-cat.jpg",
   3: "./assets/field-cosmos.jpg",
-  4: "./assets/sunflower-night.jpg",
-  5: "./assets/mood-spark-wall.png",
-  6: "./assets/projects-fire.jpg"
+  4: "./assets/typing-hands.jpg",
+  5: "./assets/motion-stars.jpg",
+  6: "./assets/mood-spark-wall.png",
+  7: "./assets/projects-fire.jpg"
 };
+
+/**
+ * Live walls: chapters whose pixels come from a video instead of a still.
+ * The frame is sampled into the same COLS x ROWS grid every tick, so the
+ * wipe, the key presses and the cursor wake all keep working unchanged.
+ */
+const VIDEO_BY_CHAPTER = {
+  4: ["./assets/typing-hands.webm", "./assets/typing-hands.mp4"],
+  5: ["./assets/motion-stars.webm", "./assets/motion-stars.mp4"]
+};
+const LIVE_FPS = 15;
+const liveWalls = new Map();
 const IMAGE_SAMPLE = {
   1: { mode: "stretch" },
   2: { mode: "stretch" },
   3: { mode: "stretch" },
   4: { mode: "stretch" },
   5: { mode: "stretch" },
-  6: { mode: "stretch" }
+  6: { mode: "stretch" },
+  7: { mode: "stretch" }
 };
 const COLS = 140;
 const ROWS = 96;
@@ -85,9 +99,10 @@ const HINTS = {
   1: "Scroll to paint into Backstory",
   2: "Keep scrolling for Experiments",
   3: "Keep scrolling for Playground",
-  4: "Keep scrolling for Moodboard",
-  5: "Keep scrolling for Connect",
-  6: "End of the path · scroll up to wipe back"
+  4: "Keep scrolling for Ideas",
+  5: "Keep scrolling for Moodboard",
+  6: "Keep scrolling for Connect",
+  7: "End of the path · scroll up to wipe back"
 };
 
 function ensureAudio() {
@@ -186,6 +201,7 @@ function unlockAudioFromGesture(force = false) {
     } catch {
       /* ignore */
     }
+    for (const live of liveWalls.values()) live.video.play().catch(() => {});
     const first = !soundUnlocked;
     soundUnlocked = true;
     // Start bed only after keys are armed (and only when music is on)
@@ -361,7 +377,7 @@ const pointer = new THREE.Vector2(0, 0);
 const hitPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 const hitPoint = new THREE.Vector3();
 
-function vivid(r, g, b) {
+function vividInto(target, r, g, b) {
   // Stronger contrast + slight saturation so brushwork stays readable on the wall
   let rr = r / 255;
   let gg = g / 255;
@@ -375,11 +391,56 @@ function vivid(r, g, b) {
   rr = avg + (rr - avg) * sat;
   gg = avg + (gg - avg) * sat;
   bb = avg + (bb - avg) * sat;
-  return new THREE.Color(
+  target.setRGB(
     Math.min(1, Math.max(0, rr)),
     Math.min(1, Math.max(0, gg)),
     Math.min(1, Math.max(0, bb))
   );
+  return target;
+}
+
+function vivid(r, g, b) {
+  return vividInto(new THREE.Color(), r, g, b);
+}
+
+function setupLiveWalls() {
+  for (const [key, sources] of Object.entries(VIDEO_BY_CHAPTER)) {
+    const video = document.createElement("video");
+    video.muted = true;
+    video.defaultMuted = true;
+    video.loop = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.setAttribute("playsinline", "");
+    video.preload = "auto";
+    for (const src of sources) {
+      const s = document.createElement("source");
+      s.src = src;
+      s.type = src.endsWith(".webm") ? "video/webm" : "video/mp4";
+      video.appendChild(s);
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = COLS;
+    canvas.height = ROWS;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    liveWalls.set(Number(key), { video, ctx, last: 0 });
+    video.play().catch(() => {}); // muted autoplay is allowed; retried on gesture
+  }
+}
+
+/** Repaint one chapter's colours from the current video frame, in place */
+function sampleLiveWall(chapter, now) {
+  const live = liveWalls.get(chapter);
+  if (!live || live.video.readyState < 2) return;
+  if (now - live.last < 1000 / LIVE_FPS) return;
+  live.last = now;
+
+  live.ctx.drawImage(live.video, 0, 0, COLS, ROWS);
+  const data = live.ctx.getImageData(0, 0, COLS, ROWS).data;
+  for (let i = 0; i < cells.length; i++) {
+    const p = i * 4;
+    vividInto(cells[i].chapterColors[chapter], data[p], data[p + 1], data[p + 2]);
+  }
 }
 
 function coverCrop(img, w, h, focus = { x: 0.5, y: 0.5 }) {
@@ -853,6 +914,18 @@ function animate() {
     if (fRow % 2 === 0) playKeyClick(0.28, fRow / ROWS);
   }
 
+  if (liveWalls.size) {
+    const t = performance.now();
+    for (const [chapter, live] of liveWalls) {
+      if (chapter === from || chapter === to) {
+        if (live.video.paused) live.video.play().catch(() => {});
+        sampleLiveWall(chapter, t);
+      } else if (!live.video.paused) {
+        live.video.pause(); // offscreen walls cost nothing
+      }
+    }
+  }
+
   focus.speed *= 0.88;
 
   let focusC = -1;
@@ -983,6 +1056,7 @@ async function boot() {
     pixelsByChapter[i + 1] = sampleImage(img, IMAGE_SAMPLE[i + 1]);
   });
   buildCells(pixelsByChapter);
+  setupLiveWalls();
   resize();
   requestAnimationFrame(animate);
 
