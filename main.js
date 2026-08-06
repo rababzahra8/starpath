@@ -40,6 +40,8 @@ const IMAGE_BLEND = 0.35;
 const JOURNEY_MAX = CHAPTER_COUNT - 1;
 const JOURNEY_SCROLL = 0.00105;
 const JOURNEY_SMOOTH = reduceMotion ? 0.2 : 0.055; // Lenis-like wheel settle into journey
+/** Nav-jump wipe duration - long enough to read as row-by-row, not a cut */
+const JUMP_MS = reduceMotion ? 420 : 1500;
 
 let scrollResidual = 0;
 
@@ -60,23 +62,31 @@ const KEY_SPEED = 0.16;
 let lastClickCell = -1;
 let lastClickTime = 0;
 let audioCtx = null;
-let musicEnabled = true;
+/** Both silent on first load - the visitor opts in */
+let musicEnabled = false;
+let keySoundEnabled = false;
 let soundUnlocked = false;
 let masterBus = null;
 let musicEl = null;
 let musicGain = null;
 let musicConnected = false;
+let resumePending = false;
+
+/** Nav jump: single wipe straight from A to B, skipping every wall in between */
+let jump = null;
+/** Dot to light up immediately on click, even before the wipe hands over */
+let navHighlight = 0;
 
 const MUSIC_SRC = "./assets/ambient.mp3";
-/** Quiet under key clicks — keys stay on always */
+/** Quiet under key clicks */
 const MUSIC_LEVEL = 0.12;
 
 const HINTS = {
-  1: "Scroll — paint into Playground",
-  2: "Keep scrolling — Experiments",
-  3: "Keep scrolling — Garden",
-  4: "Keep scrolling — Moodboard",
-  5: "Keep scrolling — Connect",
+  1: "Scroll to paint into Playground",
+  2: "Keep scrolling for Experiments",
+  3: "Keep scrolling for Garden",
+  4: "Keep scrolling for Moodboard",
+  5: "Keep scrolling for Connect",
   6: "End of the path · scroll up to wipe back"
 };
 
@@ -97,7 +107,7 @@ function ensureAudio() {
   return audioCtx;
 }
 
-/** Looping bed — toggled separately from key clicks */
+/** Looping bed - toggled separately from key clicks */
 function ensureMusic() {
   const ctx = ensureAudio();
   if (!ctx || musicConnected) return musicEl;
@@ -149,15 +159,21 @@ function setMusicPlaying(on) {
 }
 
 /**
- * Must run inside a real user gesture (pointerdown / keydown / click).
- * Resumes AudioContext so key BufferSources can play — Music button not required.
+ * Arms the AudioContext so a toggle takes effect the instant it's flipped.
+ * Silent on its own - nothing plays unless musicEnabled / keySoundEnabled are on.
  */
-function unlockAudioFromGesture() {
+function unlockAudioFromGesture(force = false) {
+  if (soundUnlocked) return;
+  if (force) resumePending = false;
   const ctx = ensureAudio();
   if (!ctx || !masterBus) return;
 
   const arm = () => {
-    if (ctx.state !== "running") return;
+    if (ctx.state !== "running") {
+      resumePending = false;
+      return;
+    }
+    resumePending = false;
     try {
       const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
       const src = ctx.createBufferSource();
@@ -177,18 +193,25 @@ function unlockAudioFromGesture() {
   };
 
   if (ctx.state === "suspended") {
-    // resume() must be invoked in this gesture call stack
-    ctx.resume().then(arm).catch(() => {});
+    // resume() must be invoked in this gesture call stack.
+    // Non-gesture callers (pointermove/wheel) leave the promise pending until
+    // the browser grants activation - then arm() fires on its own.
+    if (resumePending) return;
+    resumePending = true;
+    ctx.resume().then(arm).catch(() => {
+      resumePending = false;
+    });
   } else {
     arm();
   }
 }
 
 /**
- * Soft laptop-style key — always on once AudioContext is running.
+ * Soft laptop-style key - always on once AudioContext is running.
  * Does not create/resume context on hover (that isn't a gesture).
  */
 function playKeyClick(intensity = 1, pitch = 0.5) {
+  if (!keySoundEnabled) return;
   if (!audioCtx || !masterBus || audioCtx.state !== "running") return;
 
   const t0 = audioCtx.currentTime;
@@ -270,7 +293,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 const group = new THREE.Group();
 scene.add(group);
 
-// Soft keycap lighting — tops bright, sides fall off like real keys
+// Soft keycap lighting - tops bright, sides fall off like real keys
 const ambient = new THREE.AmbientLight(0x9eb6d4, 0.5);
 scene.add(ambient);
 const keyLight = new THREE.DirectionalLight(0xfff2d8, 1.25);
@@ -373,7 +396,7 @@ function coverCrop(img, w, h, focus = { x: 0.5, y: 0.5 }) {
   return { sx, sy, sw, sh };
 }
 
-/** Letterbox / pillarbox so the entire painting fits — nothing cropped */
+/** Letterbox / pillarbox so the entire painting fits - nothing cropped */
 function fitRect(img, w, h) {
   const srcAspect = img.width / img.height;
   const dstAspect = w / h;
@@ -475,7 +498,7 @@ function fitCamera() {
   camera.aspect = w / Math.max(h, 1);
   camera.updateProjectionMatrix();
 
-  // Face-on (no tilt) — camera sits on the Z axis looking straight at the wall
+  // Face-on (no tilt) - camera sits on the Z axis looking straight at the wall
   const dist = 18;
   camera.position.set(0, 0, dist);
   camera.lookAt(0, 0, 0);
@@ -497,7 +520,7 @@ function resize() {
 function worldFromPointer() {
   raycaster.setFromCamera(pointer, camera);
   if (!raycaster.ray.intersectPlane(hitPlane, hitPoint)) return null;
-  // Wall is non-uniformly scaled to fill the screen — map hit into local key space
+  // Wall is non-uniformly scaled to fill the screen - map hit into local key space
   return {
     x: hitPoint.x / Math.max(group.scale.x, 0.0001),
     y: hitPoint.y / Math.max(group.scale.y, 0.0001)
@@ -526,12 +549,13 @@ function setPointerFromEvent(e) {
 }
 
 function measureProgress() {
+  const active = navHighlight || currentChapter;
   document.querySelectorAll(".chapter-dot").forEach((btn) => {
     const n = Number(btn.dataset.goto);
     btn.disabled = false;
     btn.classList.add("is-unlocked");
-    btn.classList.toggle("is-active", n === currentChapter);
-    if (n === currentChapter) btn.setAttribute("aria-current", "page");
+    btn.classList.toggle("is-active", n === active);
+    if (n === active) btn.setAttribute("aria-current", "page");
     else btn.removeAttribute("aria-current");
   });
 }
@@ -551,7 +575,7 @@ function wipeState(j) {
   const wipeIndex = Math.floor(clamped);
   const local = clamped - wipeIndex;
 
-  // Exact chapter boundary — previous wipe finished
+  // Exact chapter boundary - previous wipe finished
   if (local < 0.0001) {
     const chapter = wipeIndex + 1;
     return {
@@ -616,6 +640,24 @@ function applyChapterUI(n) {
 
 function goToChapter(n) {
   n = Math.max(1, Math.min(CHAPTER_COUNT, n));
+  const from = currentChapter || 1;
+
+  // Jumping more than one chapter: wipe straight from the wall we're on to the
+  // target wall. Same pixel-colour animation, just no intermediate paintings.
+  if (Math.abs(n - from) > 1) {
+    scrollResidual = 0;
+    jump = { from, to: n, t0: performance.now(), handedOver: false };
+    journeyTarget = journeyForChapter(n);
+    journey = journeyTarget; // park the scroll model at the destination
+    // Light the dot now; swap the page copy once the wipe is well underway
+    navHighlight = n;
+    measureProgress();
+    moveNavPill();
+    return;
+  }
+
+  jump = null;
+  navHighlight = 0;
   journeyTarget = journeyForChapter(n);
   applyChapterUI(n);
 }
@@ -624,6 +666,8 @@ function goToChapter(n) {
  * Scroll drives continuous wipes. Wheel is eased (Lenis-like) into journey.
  */
 function handleScroll(deltaY) {
+  jump = null;
+  navHighlight = 0;
   scrollResidual += deltaY;
 }
 
@@ -656,7 +700,9 @@ function bindUI() {
   });
 
   window.addEventListener("wheel", (e) => {
+    unlockAudioFromGesture();
     if (Math.abs(e.deltaY) < 1) return;
+    jump = null; // scrolling always wins over an in-flight nav jump
     handleScroll(e.deltaY);
   }, { passive: true });
 
@@ -672,9 +718,14 @@ function bindUI() {
     handleScroll(dy);
   }, { passive: true });
 
-  window.addEventListener("pointermove", setPointerFromEvent, { passive: true });
+  // Moving the cursor is enough to arm audio - no Music button, no click needed
+  window.addEventListener("pointermove", (e) => {
+    unlockAudioFromGesture();
+    setPointerFromEvent(e);
+  }, { passive: true });
+  window.addEventListener("pointerover", () => unlockAudioFromGesture(), { passive: true });
   // Any press/click/key unlocks Web Audio so key clicks work without Music toggle
-  const unlock = () => unlockAudioFromGesture();
+  const unlock = () => unlockAudioFromGesture(true);
   window.addEventListener("pointerdown", (e) => {
     unlock();
     setPointerFromEvent(e);
@@ -684,21 +735,41 @@ function bindUI() {
   window.addEventListener("resize", resize);
 
   document.getElementById("btn-music")?.addEventListener("click", () => {
-    unlockAudioFromGesture();
+    unlockAudioFromGesture(true);
     musicEnabled = !musicEnabled;
     setMusicPlaying(musicEnabled);
-    syncMusicButton();
+    syncSoundButtons();
   });
 
-  function syncMusicButton() {
-    const btn = document.getElementById("btn-music");
-    if (!btn) return;
-    btn.textContent = musicEnabled ? "Music: on" : "Music: off";
-    btn.setAttribute("aria-pressed", musicEnabled ? "true" : "false");
+  document.getElementById("btn-keys")?.addEventListener("click", () => {
+    unlockAudioFromGesture(true);
+    keySoundEnabled = !keySoundEnabled;
+    try {
+      setMotionSoundEnabled(keySoundEnabled);
+    } catch {
+      /* motion not ready yet */
+    }
+    syncSoundButtons();
+  });
+
+  function syncSoundButtons() {
+    const music = document.getElementById("btn-music");
+    if (music) {
+      music.textContent = musicEnabled ? "Music: on" : "Music: off";
+      music.setAttribute("aria-pressed", musicEnabled ? "true" : "false");
+    }
+    const kb = document.getElementById("btn-keys");
+    if (kb) {
+      kb.textContent = keySoundEnabled ? "Cursor sound: on" : "Cursor sound: off";
+      kb.setAttribute("aria-pressed", keySoundEnabled ? "true" : "false");
+    }
   }
 
+  // Silent on first paint - buttons must say so
+  syncSoundButtons();
+
   window.addEventListener("keydown", (e) => {
-    unlockAudioFromGesture();
+    unlockAudioFromGesture(true);
     const k = e.key.toLowerCase();
     if (k === "pagedown" || (k === " " && !e.target.closest("input, textarea"))) {
       e.preventDefault();
@@ -735,15 +806,45 @@ function animate() {
   updateKeyboardFocus();
   flushScrollResidual();
 
-  // Ease the wipe frontier down the wall (Lenis-like settle into journey)
-  journey += (journeyTarget - journey) * JOURNEY_SMOOTH;
-  if (Math.abs(journeyTarget - journey) < 0.0005) journey = journeyTarget;
+  let frontier;
+  let from;
+  let to;
+  let scrolling;
 
-  const scrolling = Math.abs(journeyTarget - journey) > 0.002;
-  const { frontier, from, to } = wipeState(journey);
+  if (jump) {
+    // One direct wipe, identical row-by-row colour animation, no walls between.
+    // Time-based so the frontier crawls down at the same pace a scroll wipe does.
+    const raw = Math.max(0, Math.min(1, (performance.now() - jump.t0) / JUMP_MS));
+    const eased = raw * raw * (3 - 2 * raw); // smoothstep, like the scroll settle
+    const start = -WIPE_EDGE;
+    const end = ROWS + WIPE_EDGE;
+    frontier = start + eased * (end - start);
+    from = jump.from;
+    to = jump.to;
+    scrolling = raw < 1;
+    journey = journeyTarget;
 
-  const nextChapter = chapterFromJourney(journey);
-  if (nextChapter !== currentChapter) applyChapterUI(nextChapter);
+    // Hand the page copy over mid-wipe, same moment a scroll would
+    if (!jump.handedOver && raw > 0.34) {
+      jump.handedOver = true;
+      applyChapterUI(jump.to);
+    }
+    if (raw >= 1) {
+      if (!jump.handedOver) applyChapterUI(jump.to);
+      navHighlight = 0;
+      jump = null;
+    }
+  } else {
+    // Ease the wipe frontier down the wall (Lenis-like settle into journey)
+    journey += (journeyTarget - journey) * JOURNEY_SMOOTH;
+    if (Math.abs(journeyTarget - journey) < 0.0005) journey = journeyTarget;
+
+    scrolling = Math.abs(journeyTarget - journey) > 0.002;
+    ({ frontier, from, to } = wipeState(journey));
+
+    const nextChapter = chapterFromJourney(journey);
+    if (nextChapter !== currentChapter) applyChapterUI(nextChapter);
+  }
 
   // Soft tick when the frontier crosses a new row
   const fRow = Math.floor(frontier);
@@ -887,7 +988,7 @@ async function boot() {
 
   try {
     initMotion({ playClick: playKeyClick });
-    setMotionSoundEnabled(true); // whoosh always on; Music button never mutes keys
+    setMotionSoundEnabled(keySoundEnabled); // follows the Cursor sound toggle
   } catch (err) {
     console.warn("Motion polish skipped:", err);
   }

@@ -1,5 +1,5 @@
 /**
- * Starpath motion polish — vanilla modules (site is not React).
+ * Starpath motion polish - vanilla modules (site is not React).
  * Soft premium reveals + cursor + micro-interactions; layout/colors stay put.
  * Respects prefers-reduced-motion.
  */
@@ -15,7 +15,7 @@ export function setMotionSoundEnabled(on) {
   whooshEnabled = on;
 }
 
-/** Soft section-change whoosh — never autoplays alone. */
+/** Soft section-change whoosh - never autoplays alone. */
 export function playWhoosh() {
   if (!whooshEnabled || reduceMotion) return;
   try {
@@ -49,7 +49,7 @@ export function playWhoosh() {
   }
 }
 
-/* —— Custom mosaic cursor —— */
+/* -- Custom mosaic cursor -- */
 let cursorEl;
 let cursorMode = "dot";
 
@@ -73,7 +73,7 @@ function ensureCursor() {
     { passive: true }
   );
 
-  // Slight scale only — no Open/Enter label pills
+  // Slight scale only - no Open/Enter label pills
   document.addEventListener("pointerover", (e) => {
     const hit = e.target.closest(
       "a, button, [data-goto], .experiment, .experiment-enter, .connect-cta, .chapter-dot, .brand"
@@ -81,7 +81,7 @@ function ensureCursor() {
     setCursorMode(hit ? "grow" : "dot");
   });
 
-  // Magnetic pull for links / CTA — tiny, premium
+  // Magnetic pull for links / CTA - tiny, premium
   document.addEventListener(
     "pointermove",
     (e) => {
@@ -113,7 +113,7 @@ function setCursorMode(mode) {
   cursorEl.dataset.mode = mode;
 }
 
-/* —— Nav sliding pill —— */
+/* -- Nav sliding pill -- */
 let navPill;
 
 function ensureNavPill() {
@@ -145,7 +145,7 @@ export function moveNavPill(instant = false) {
   });
 }
 
-/* —— Chapter content reveals —— */
+/* -- Chapter content reveals -- */
 let lastRevealChapter = -1;
 
 export function revealChapter(n) {
@@ -176,7 +176,7 @@ export function revealChapter(n) {
     if (lines.length) killList.push(...lines);
     gsap.killTweensOf(killList);
 
-    // Soft plaque settle — no heading bob / mask
+    // Soft plaque settle - no heading bob / mask
     gsap.fromTo(
       plaque,
       { autoAlpha: 0.75, y: 12 },
@@ -288,7 +288,7 @@ function bindConnectTilt(page) {
       const r = plaque.getBoundingClientRect();
       const nx = (e.clientX - (r.left + r.width / 2)) / (r.width * 0.5);
       const ny = (e.clientY - (r.top + r.height / 2)) / (r.height * 0.5);
-      // A few degrees only — ambient, not dizzy
+      // A few degrees only - ambient, not dizzy
       plaque.style.transform = `perspective(900px) rotateY(${nx * 2.2}deg) rotateX(${-ny * 1.6}deg)`;
     },
     { passive: true }
@@ -302,7 +302,7 @@ function bindConnectTilt(page) {
   );
 }
 
-/* —— Experiments hover + soft exit into project —— */
+/* -- Experiments hover + soft exit into project -- */
 export function bindExperiments(playClick) {
   const list = document.querySelector(".experiment-list");
   if (!list || list.dataset.bound === "1") return;
@@ -322,7 +322,7 @@ export function bindExperiments(playClick) {
     const enter = row.querySelector(".experiment-enter");
     if (!enter || reduceMotion) return;
     enter.addEventListener("click", (e) => {
-      // Soft dissolve before leaving — external project pages can't share a route
+      // Soft dissolve before leaving - external project pages can't share a route
       if (enter.dataset.leaving === "1") return;
       e.preventDefault();
       enter.dataset.leaving = "1";
@@ -352,7 +352,7 @@ export function bindExperiments(playClick) {
   });
 }
 
-/** Subtle wall parallax — GPU transform only, tiny range */
+/** Subtle wall parallax - GPU transform only, tiny range */
 export function wallParallax(group, nx, ny, reduce) {
   if (!group || reduce || reduceMotion) {
     if (group) group.rotation.set(0, 0, 0);

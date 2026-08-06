@@ -71,7 +71,7 @@ body {
   position: absolute;
   inset: 0;
   z-index: 1;
-  /* Very light edge shade — wall stays full-bleed */
+  /* Very light edge shade - wall stays full-bleed */
   background:
     linear-gradient(180deg, rgba(7, 13, 26, 0.18) 0%, transparent 12%, transparent 88%, rgba(7, 13, 26, 0.22) 100%);
 }
@@ -97,13 +97,13 @@ body {
   to { transform: translate3d(-18px, 12px, 0); }
 }
 
-/* —— Top bar —— */
+/* -- Top bar -- */
 .topbar {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 4;
+  z-index: 6;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
@@ -231,7 +231,7 @@ body {
   50% { opacity: 1; }
 }
 
-/* —— Pages —— */
+/* -- Pages -- */
 .storybook {
   position: absolute;
   inset: 0;
@@ -247,7 +247,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: 0;
-  padding: clamp(72px, 12vh, 120px) clamp(20px, 4vw, 56px) clamp(72px, 11vh, 108px);
+  padding: clamp(92px, 12vh, 124px) clamp(20px, 4vw, 56px) clamp(78px, 11vh, 108px);
   opacity: 0;
   visibility: hidden;
   transform: translateY(18px);
@@ -267,7 +267,7 @@ body {
   display: flex !important; /* keep layout for fade; inert + aria-hidden handle a11y */
 }
 
-/* Barely-there glass — type sits on the wall, panel almost invisible */
+/* Barely-there glass - type sits on the wall, panel almost invisible */
 .plaque {
   pointer-events: auto;
   position: relative;
@@ -591,43 +591,69 @@ body {
 }
 
 .plaque--experiments {
-  max-width: min(560px, 94vw);
+  max-width: min(780px, 92vw);
+  /* Never grow past the wall between the topbar and the footer */
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
+/* Strict 2 × 2 - four projects, two rows, two columns */
 .experiment-list {
   list-style: none;
   margin: 10px 0 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr; /* both rows equal - all four cards identical height */
+  align-items: stretch;
+  gap: 12px;
+  min-height: 0;
 }
 
+/* Card sits on the key wall like the plaque does - barely-there glass */
 .experiment {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 6px 4px;
-  margin: 0 -4px;
-  border-radius: 8px;
+  flex-direction: column;
+  gap: 7px;
+  padding: 13px 15px 14px;
+  margin: 0;
+  min-height: 0;
+  border-radius: 12px;
+  background: rgba(7, 13, 26, 0.16);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border: 1px solid rgba(255, 229, 140, 0.16);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
   transition:
     opacity 0.35s var(--ease),
     filter 0.35s var(--ease),
+    transform 0.35s var(--ease),
+    border-color 0.35s var(--ease),
     background 0.35s var(--ease);
 }
 
 .experiment.is-hot {
-  background: rgba(255, 248, 230, 0.06);
+  background: rgba(255, 248, 230, 0.07);
+  border-color: rgba(255, 229, 140, 0.42);
+  transform: translateY(-2px);
+}
+
+.experiment-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 .experiment-name {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.55rem, 3.8vw, 2.35rem);
+  font-size: clamp(1.05rem, 1.9vw, 1.32rem);
   font-weight: 800;
   letter-spacing: -0.03em;
-  line-height: 1.05;
+  line-height: 1.1;
   color: #fffdf4;
   text-shadow:
     0 2px 0 rgba(0, 0, 0, 0.7),
@@ -635,13 +661,63 @@ body {
 }
 
 .experiment-status {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.06em;
   color: rgba(255, 236, 200, 0.72);
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
+}
+
+.experiment-note {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(244, 239, 228, 0.86);
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 3px 14px rgba(0, 0, 0, 0.8);
+}
+
+/* Pinned to the card floor so all four cards line up */
+.experiment-tags {
+  list-style: none;
+  margin: auto 0 0;
+  padding: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.experiment-tags li {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 229, 140, 0.2);
+  background: rgba(7, 13, 26, 0.28);
+  color: rgba(255, 236, 200, 0.78);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+}
+
+/* Meadow Sync - green hairline instead of gold */
+.experiment--meadow {
+  border-color: rgba(140, 230, 180, 0.24);
+}
+
+.experiment--meadow.is-hot {
+  border-color: rgba(140, 230, 180, 0.5);
+}
+
+@media (max-width: 620px) {
+  .experiment-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .experiment-enter {
@@ -881,7 +957,7 @@ body {
   font-size: clamp(1.7rem, 4.5vw, 2.6rem);
 }
 
-/* Path — company experience (no project repeat) */
+/* Path - company experience (no project repeat) */
 .plaque--path {
   max-width: min(560px, 94vw);
 }
@@ -932,7 +1008,7 @@ body {
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
 }
 
-/* Work reel — stills on the wall, not cards */
+/* Work reel - stills on the wall, not cards */
 .plaque--work {
   max-width: min(720px, 96vw);
   max-height: min(62vh, 560px);
@@ -1186,7 +1262,7 @@ body {
   animation: pulse-hint 2.4s ease-in-out infinite;
 }
 
-/* —— Legacy unused patterns kept minimal —— */
+/* -- Legacy unused patterns kept minimal -- */
 .story-projects {
   list-style: none;
   margin: 0 0 20px;
@@ -1236,7 +1312,7 @@ body {
   color: var(--mute);
 }
 
-/* —— About / contact —— */
+/* -- About / contact -- */
 .about-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1315,7 +1391,7 @@ body {
   color: var(--gold-soft);
 }
 
-/* —— Footer —— */
+/* -- Footer -- */
 .page-footer {
   position: absolute;
   left: 0;
@@ -1353,7 +1429,7 @@ body {
   font-weight: 700;
 }
 
-/* —— Mobile —— */
+/* -- Mobile -- */
 @media (max-width: 720px) {
   .topbar {
     grid-template-columns: 1fr auto;
@@ -1423,7 +1499,7 @@ body {
 
 
 
-/* —— Motion polish (cursor, experiments, garden, contact) —— */
+/* -- Motion polish (cursor, experiments, garden, contact) -- */
 html.has-custom-cursor,
 html.has-custom-cursor * {
   cursor: none !important;

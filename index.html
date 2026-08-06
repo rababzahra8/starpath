@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Rabab Zahra — engineer, builder, forever curious. Products where software, design, AI, and hardware meet."
+      content="Rabab Zahra. Engineer, builder, forever curious. Products where software, design, AI, and hardware meet."
     />
     <meta name="theme-color" content="#0a1628" />
     <meta name="author" content="Rabab Zahra" />
@@ -23,7 +23,7 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Sora:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?v=7" />
   </head>
   <body>
     <div id="app">
@@ -90,7 +90,7 @@
             <span class="chapter-name">Connect</span>
           </button>
         </nav>
-        <p class="paint-hint" id="paint-hint">Scroll — paint the next wall</p>
+        <p class="paint-hint" id="paint-hint">Scroll to paint the next wall</p>
       </header>
 
       <main class="storybook">
@@ -188,43 +188,103 @@
             <p class="plaque-num">03 experiments</p>
             <ul class="experiment-list" aria-label="Experiments">
               <li class="experiment">
-                <div class="experiment-meta">
-                  <h3 class="experiment-name">Digital Memory Jar</h3>
-                  <p class="experiment-status">Growing…</p>
+                <div class="experiment-head">
+                  <div class="experiment-meta">
+                    <h3 class="experiment-name">Digital Memory Jar</h3>
+                    <p class="experiment-status">Growing…</p>
+                  </div>
+                  <a
+                    class="experiment-enter"
+                    href="https://v0-memory-jar.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Enter</a
+                  >
                 </div>
-                <a
-                  class="experiment-enter"
-                  href="https://v0-memory-jar.vercel.app/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >Enter</a
-                >
+                <p class="experiment-note">
+                  Leave a little piece of your heart among the stars, then tap
+                  the jar to draw someone else's back out.
+                </p>
+                <ul class="experiment-tags" aria-label="Built with">
+                  <li>Next.js</li>
+                  <li>Vercel</li>
+                  <li>Anonymous</li>
+                </ul>
               </li>
+
               <li class="experiment">
-                <div class="experiment-meta">
-                  <h3 class="experiment-name">Living AI Garden</h3>
-                  <p class="experiment-status">Blooming…</p>
+                <div class="experiment-head">
+                  <div class="experiment-meta">
+                    <h3 class="experiment-name">Living AI Garden</h3>
+                    <p class="experiment-status">Blooming…</p>
+                  </div>
+                  <a
+                    class="experiment-enter"
+                    href="https://living-ai-garden.r-rababzahra888.workers.dev/garden"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Enter</a
+                  >
                 </div>
-                <a
-                  class="experiment-enter"
-                  href="https://living-ai-garden.r-rababzahra888.workers.dev/garden"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >Enter</a
-                >
+                <p class="experiment-note">
+                  A living 3D garden where every chat plants a seed and blooms
+                  into a flower that's only yours.
+                </p>
+                <ul class="experiment-tags" aria-label="Built with">
+                  <li>Three.js</li>
+                  <li>Workers</li>
+                  <li>LLM</li>
+                </ul>
               </li>
+
               <li class="experiment">
-                <div class="experiment-meta">
-                  <h3 class="experiment-name">Stellar Navigator</h3>
-                  <p class="experiment-status">Orbiting…</p>
+                <div class="experiment-head">
+                  <div class="experiment-meta">
+                    <h3 class="experiment-name">Stellar Navigator</h3>
+                    <p class="experiment-status">Orbiting…</p>
+                  </div>
+                  <a
+                    class="experiment-enter"
+                    href="https://www.rababzahra.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Enter</a
+                  >
                 </div>
-                <a
-                  class="experiment-enter"
-                  href="https://www.rababzahra.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >Enter</a
-                >
+                <p class="experiment-note">
+                  Pilot through a living galaxy, warping between planets that
+                  each open into a different world of work.
+                </p>
+                <ul class="experiment-tags" aria-label="Built with">
+                  <li>Three.js</li>
+                  <li>GLSL</li>
+                  <li>WebGL</li>
+                </ul>
+              </li>
+
+              <li class="experiment experiment--meadow">
+                <div class="experiment-head">
+                  <div class="experiment-meta">
+                    <h3 class="experiment-name">Meadow Sync</h3>
+                    <p class="experiment-status">Swaying…</p>
+                  </div>
+                  <a
+                    class="experiment-enter"
+                    href="https://github.com/rababzahra8#-meadow-sync"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Enter</a
+                  >
+                </div>
+                <p class="experiment-note">
+                  A tiny relaxing meadow, Create an issue to add a flower, make
+                  it rain, or clear the day on my readme.
+                </p>
+                <ul class="experiment-tags" aria-label="Built with">
+                  <li>SVG + SMIL</li>
+                  <li>Workers</li>
+                  <li>GitHub Issues</li>
+                </ul>
               </li>
             </ul>
           </div>
@@ -324,8 +384,8 @@
                 </figure>
                 <p class="mood-step-label">02 · First poke</p>
                 <p class="mood-step-note">
-                  Asked Claude how to start. Got a half-baked HTML sketch back —
-                  free tier ran out fast, lucky me.
+                  Asked Claude how to start. Got a half-baked HTML sketch back,
+                  then the free tier ran out fast. Lucky me.
                 </p>
               </li>
               <li class="mood-arrow" aria-hidden="true">→</li>
@@ -409,11 +469,20 @@
           <button
             type="button"
             class="btn btn-tiny"
+            id="btn-keys"
+            aria-pressed="false"
+            aria-label="Toggle cursor key sound"
+          >
+            Cursor sound: off
+          </button>
+          <button
+            type="button"
+            class="btn btn-tiny"
             id="btn-music"
-            aria-pressed="true"
+            aria-pressed="false"
             aria-label="Toggle background music"
           >
-            Music: on
+            Music: off
           </button>
         </div>
       </footer>
